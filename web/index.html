@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>U2DIA AI SERVER AGENT</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B96FF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="유디AI">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="stylesheet" href="/css/variables.css?v=1773500007">
+<link rel="stylesheet" href="/css/layout.css?v=1773500007">
+<link rel="stylesheet" href="/css/components.css?v=1773500007">
+<link rel="stylesheet" href="/css/kanban.css?v=1773500007">
+<link rel="stylesheet" href="/css/sidebar.css?v=1773500007">
+<link rel="stylesheet" href="/css/cli.css?v=1773500007">
+<style>
+/* Inline overrides */
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.agent-list::-webkit-scrollbar { width: 3px; }
+.agent-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+  font-size: var(--fs-lg);
+}
+.empty-state::before {
+  content: '◇';
+  display: block;
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 헤더 -->
+  <header class="app-header">
+    <a class="logo" href="#/" onclick="Router.navigate('#/')">
+      <div class="logo-icon">U</div>
+      <h1>U2DIA AI SERVER AGENT</h1>
+    </a>
+    <div class="header-stats" id="headerStats"></div>
+    <div class="header-actions">
+      <span id="sseStatus" class="sse-dot" title="SSE 상태"></span>
+      <button class="btn btn-sm" onclick="App.refresh()" title="새로고침">&#8635;</button>
+    </div>
+  </header>
+
+  <!-- 워크스페이스: 사이드바 + 콘텐츠 영역 -->
+  <div class="app-workspace">
+    <div class="ws-sidebar" id="wsSidebar"></div>
+    <div class="ws-content">
+      <main class="ws-upper" id="mainContent">
+        <div class="empty-state">로딩중...</div>
+      </main>
+      <div class="ws-cli-resizer" id="wsCliResizer"></div>
+      <div class="ws-cli" id="wsCli"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Ticket Detail Modal -->
+<div class="modal-overlay" id="ticketModalOverlay" onclick="Modal.close(event)">
+  <div class="modal" id="ticketModal" onclick="event.stopPropagation()">
+    <div class="modal-header" id="modalHeader"></div>
+    <div class="modal-tabs" id="modalTabs"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script src="/js/utils.js?v=1773500007"></script>
+<script src="/js/api.js?v=1773500007"></script>
+<script src="/js/sse.js?v=1773500007"></script>
+<script src="/js/modal.js?v=1773500007"></script>
+<script src="/js/router.js?v=1773500007"></script>
+<script src="/js/sidebar.js?v=1773500007"></script>
+<script src="/js/cli-panel.js?v=1773500007"></script>
+<script src="/js/dashboard.js?v=1773500007"></script>
+<script src="/js/ticket-detail.js?v=1773500007"></script>
+<script src="/js/history.js?v=1773500007"></script>
+<script src="/js/archive-detail.js?v=1773500007"></script>
+<script src="/js/kanban.js?v=1773500007"></script>
+<script>
+/* U2DIA AI SERVER AGENT — App Entry */
+const App = {
+  _currentView: null,
+
+  init() {
+    Router.on('/', () => this.showDashboard());
+    Router.on('/board/:teamId', (p) => this.showKanban(p.teamId));
+    Router.on('/archives', () => this.showArchives());
+    Router.on('/archives/:teamId', (p) => this.showArchiveDetail(p.teamId));
+    Router.on('/history', () => this.showHistory());
+    Router.on('/history/:teamId', (p) => this.showHistoryDetail(p.teamId));
+
+    Router.beforeChange(() => {
+      SSE.disconnectAll();
+    });
+
+    Router.start();
+    // 글로벌 사이드바 & CLI 패널 초기화
+    if (typeof Sidebar !== 'undefined') Sidebar.init();
+    if (typeof CliPanel !== 'undefined') CliPanel.init();
+  },
+
+  showDashboard() {
+    this._currentView = 'dashboard';
+    const main = Utils.$('mainContent');
+    Dashboard.render(main);
+  },
+
+  showKanban(teamId) {
+    this._currentView = 'kanban';
+    const main = Utils.$('mainContent');
+    Kanban.render(main, teamId);
+  },
+
+  showHistory() {
+    this._currentView = 'history';
+    const main = Utils.$('mainContent');
+    TeamHistory.render(main);
+  },
+
+  showHistoryDetail(teamId) {
+    this._currentView = 'history';
+    const main = Utils.$('mainContent');
+    TeamHistory.renderDetail(main, teamId);
+  },
+
+  async showArchives() {
+    this._currentView = 'archives';
+    const main = Utils.$('mainContent');
+    main.innerHTML = `
+      <div class="dash-layout">
+        <div class="dash-header-row">
+          <h2 style="font-size:var(--fs-xl);font-weight:700">아카이브</h2>
+          <a href="#/" class="btn btn-sm">대시보드로</a>
+        </div>
+        <div id="archiveList"></div>
+      </div>`;
+    const res = await API.archives();
+    const el = Utils.$('archiveList');
+    if (!res.ok || !res.archives?.length) {
+      el.innerHTML = '<div class="empty-state">아카이브된 팀이 없습니다</div>';
+      return;
+    }
+    el.innerHTML = res.archives.map(t => `
+      <div class="card" style="margin-bottom:12px;padding:14px;cursor:pointer;transition:background 0.15s"
+           onclick="Router.navigate('#/archives/${Utils.esc(t.team_id)}')"
+           onmouseenter="this.style.background='var(--card-hover)'" onmouseleave="this.style.background=''">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="fw-bold">${Utils.esc(t.name)}</div>
+            <div class="text-xs text-muted">${Utils.esc(t.description || '')}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="text-xs text-muted">아카이브: ${Utils.dateFmt(t.archived_at)}</div>
+            <div style="font-size:var(--fs-xs);color:var(--brand-light);margin-top:4px">클릭하여 상세 보기 →</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  showArchiveDetail(teamId) {
+    this._currentView = 'archives';
+    const main = Utils.$('mainContent');
+    ArchiveDetail.render(main, teamId);
+  },
+
+  refresh() {
+    if (this._currentView === 'dashboard') Dashboard.refresh();
+    else if (this._currentView === 'kanban') Kanban.refresh();
+  }
+};
+
+App.init();
+
+/* ── 브라우저 데스크톱 알림 ── */
+const BrowserNotify = {
+  _perm: 'default',
+  init() {
+    if (!('Notification' in window)) return;
+    this._perm = Notification.permission;
+    if (this._perm === 'default') {
+      // 5초 뒤 권한 요청 (자동팝업 차단 방지)
+      setTimeout(() => {
+        Notification.requestPermission().then(p => { this._perm = p; });
+      }, 5000);
+    }
+  },
+  show(title, body, opts) {
+    if (!('Notification' in window) || this._perm !== 'granted') return;
+    try {
+      var n = new Notification(title, Object.assign({ body: body, icon: '/favicon.ico', silent: false }, opts || {}));
+      n.onclick = function() { window.focus(); n.close(); };
+      setTimeout(() => n.close(), 8000);
+    } catch(e) {}
+  }
+};
+BrowserNotify.init();
+
+/* SSE 이벤트 → 브라우저 알림 연동 */
+(function() {
+  var origConnect = SSE.connectGlobal.bind(SSE);
+  var _notifyHandlerAdded = false;
+  if (!_notifyHandlerAdded) {
+    _notifyHandlerAdded = true;
+    var checkInterval = setInterval(function() {
+      if (typeof SSE !== 'undefined') {
+        clearInterval(checkInterval);
+        SSE.connectGlobal(function(data) {
+          var et = data.event_type || data.type || '';
+          var d = data.data || {};
+          var team = data.team_name || d.team_name || '';
+          var teamLabel = team ? ' [' + team + ']' : '';
+          var msgs = {
+            'team_created':          ['🏗 팀 생성' + teamLabel, d.name || '?'],
+            'ticket_created':        ['🎫 티켓 생성' + teamLabel, d.title || '?'],
+            'ticket_status_changed': ['📊 상태 변경' + teamLabel, (d.ticket_title || d.ticket_id || '?') + ' → ' + (d.status || d.new_status || '?')],
+            'ticket_claimed':        ['⚡ 티켓 클레임' + teamLabel, (d.title || d.ticket_title || '?')],
+            'member_spawned':        ['🤖 에이전트 스폰' + teamLabel, (d.role || '?')],
+            'team_archived':         ['📦 팀 아카이브', d.team_name || d.name || '?'],
+            'team_auto_archived':    ['✅ 팀 완료!', (d.team_name || '?') + ' — 모든 티켓 완료'],
+            'feedback_created':      ['⭐ 피드백' + teamLabel, '점수: ' + (d.score || '?') + '/5']
+          };
+          var m = msgs[et];
+          if (m) BrowserNotify.show('U2DIA AI Server Agent', m[0] + '\n' + m[1]);
+        });
+      }
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>

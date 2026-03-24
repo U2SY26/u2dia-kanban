@@ -1,0 +1,202 @@
+/* ── Workspace Layout ── */
+.app-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.ws-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.sb-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--sidebar-header-bg);
+}
+
+.sb-header-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-back-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease);
+}
+.sb-back-btn:hover { background: var(--brand-bg); }
+.sb-back-btn:focus-visible { outline: none; box-shadow: var(--btn-focus-ring); }
+
+.sb-badge {
+  background: var(--brand-bg);
+  color: var(--brand);
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 1px 6px;
+  font-weight: 600;
+}
+
+.sb-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+}
+.sb-scroll::-webkit-scrollbar { width: 3px; }
+.sb-scroll::-webkit-scrollbar-track { background: transparent; }
+.sb-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* ── Project Items ── */
+.proj-item {
+  display: flex;
+  align-items: center;
+  padding: 7px 14px;
+  cursor: pointer;
+  gap: 8px;
+  border-left: 3px solid transparent;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  min-height: 36px;
+}
+.proj-item:hover { background: var(--bg-hover); }
+.proj-item.active {
+  background: var(--sidebar-active-bg);
+  border-left-color: var(--sidebar-active-border);
+}
+.proj-item.active .proj-name { color: var(--sidebar-active-text); }
+
+.proj-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+.proj-icon.git { color: var(--orange); }
+.proj-icon.dir { color: var(--text-muted); }
+
+.proj-name {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.proj-alias {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: block;
+}
+
+.proj-team-badge {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.proj-team-badge.has-teams {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* ── Team Items (팀 모드) ── */
+.team-item {
+  padding: 8px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.team-item:hover { background: var(--bg-hover); }
+.team-item.active {
+  background: var(--sidebar-active-bg);
+  border-left-color: var(--sidebar-active-border);
+}
+.team-item.active .team-item-name { color: var(--sidebar-active-text); }
+
+.team-item-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.team-pbar {
+  flex: 1;
+  height: 3px;
+  background: var(--bg-sunken);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.team-pbar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.team-pct {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+.team-tickets {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sb-section-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 14px 4px;
+  font-weight: 700;
+}
+
+.sb-empty {
+  padding: 20px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}

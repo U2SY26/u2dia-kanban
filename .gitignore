@@ -1,0 +1,46 @@
+# Database
+*.db
+*.db-wal
+*.db-shm
+*.db.bak
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+
+# Build
+build/
+dist/
+release/
+*.AppImage
+*.exe
+*.blockmap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Secrets
+.env
+*.pem
+*.key
+credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.packages
+
+# Playwright
+.playwright-mcp/
+
+# APK (use GitHub Releases)
+*.apk
