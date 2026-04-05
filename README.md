@@ -54,10 +54,10 @@ python3 server.py
 | **Single File Server** | HTTP + MCP + SSE + SQLite + REST API in one `server.py` |
 | **MCP Native** | 27+ tools for Claude Code agent orchestration |
 | **Real-time** | SSE-powered live feed, heatmap, KPI dashboard |
-| **Multi-Platform** | Web SPA + Android APK + Electron Desktop |
+| **Multi-Platform** | Web SPA + Android App + Electron Desktop |
 | **Sprint System** | gstack-inspired 7-phase workflow (Think→Ship) |
 | **Quality Gates** | 5 gate types + Nemotron/Ollama auto-review |
-| **Legal Compliance** | GDPR, privacy, security, license audit checklist |
+| **WriteQueue** | Crash-resilient batched writes with auto-reconnect |
 | **Constitution Model** | Minimal rules, maximum agent autonomy |
 
 ## Quick Start
@@ -129,10 +129,12 @@ Now your Claude Code agents can use 27+ kanban tools automatically.
 - **Project Grouping** — Drill-up/down views per project
 - **JSON Export** — Download current state as structured data
 
-### Android App
-- **Dashboard** — KPI, heatmap, team overview
+### Android App (v5.4.0)
+- **Dashboard** — KPI, heatmap, team overview with enhanced charts
 - **Live Feed** — SSE streaming with filters
 - **Kanban Board** — Full ticket management
+- **Agent Office** — Specialized agent characters with role-based UI
+- **Project Overview** — Multi-project drill-down with progress tracking
 - **AI Chat (유디)** — Talk to resident AI agent
 - **History & Archives** — Detailed timelines, tabbed detail views
 - **System Monitor** — CPU, memory, disk, connected clients
@@ -146,10 +148,9 @@ Now your Claude Code agents can use 27+ kanban tools automatically.
 
 | Platform | Download |
 |----------|----------|
-| **Android APK** | [Latest Release](https://github.com/U2SY26/U2DIA-KANBAN-BOARD/releases/latest) |
-| **Linux AppImage** | [Latest Release](https://github.com/U2SY26/U2DIA-KANBAN-BOARD/releases/latest) |
-| **Windows** | [Latest Release](https://github.com/U2SY26/U2DIA-KANBAN-BOARD/releases/latest) |
+| **Android** | [Google Play (Internal Testing)](https://play.google.com/store/apps/details?id=com.u2dia.kanban) |
 | **Web** | `python3 server.py` → http://localhost:5555 |
+| **Desktop** | Build from source: `cd desktop/server-manager-app && npm start` |
 
 ## Architecture
 
@@ -289,7 +290,7 @@ python3 server.py
 - **웹 대시보드** — KPI, 히트맵, 실시간 피드, 칸반보드
 - **Android 앱** — 대시보드, 피드, 칸반, AI 채팅, 히스토리
 - **데스크톱 앱** — 서버 관리, 토큰 관리, 시스템 모니터링
-- **MCP 도구 17개** — 팀/티켓/에이전트/산출물/피드백 관리
+- **MCP 도구 27개** — 팀/티켓/에이전트/산출물/피드백/스프린트 관리
 
 ### U2DIA 소개
 U2DIA는 제조업 AI 데이터 플랫폼 기업입니다. LINKO(제조관리), U2DIA AI(CAD/CAM 통합), U2DIA COMMERCE AI(이커머스) 등을 운영하며, NVIDIA Inception Program 멤버입니다.
