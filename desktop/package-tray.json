@@ -1,0 +1,6 @@
+{
+  "name": "u2dia-tray",
+  "version": "1.0.0",
+  "description": "U2DIA 미니 트레이",
+  "main": "tray-mini.js"
+}

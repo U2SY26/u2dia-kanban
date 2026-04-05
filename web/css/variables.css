@@ -1,0 +1,328 @@
+/* U2DIA AI SERVER AGENT — Design Tokens (Salesforce Lightning Dark Mode) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Salesforce Brand Blue */
+  --brand: #0176D3;
+  --brand-light: #1B96FF;
+  --brand-dark: #014486;
+  --brand-bg: rgba(27,150,255,0.08);
+
+  /* SLDS Dark Mode — Navy layered system */
+  --bg: #16181D;
+  --bg-elevated: #1C1F26;
+  --panel: #22252E;
+  --card: #272B35;
+  --card-hover: #2E323E;
+  --surface-raised: #2E323E;
+  --surface-sunken: rgba(0,0,0,0.18);
+
+  /* Text — high contrast */
+  --text: #ECEDEE;
+  --text-secondary: #8E9BAE;
+  --muted: #5E6C84;
+  --text-inverse: #16181D;
+
+  /* Borders — barely visible */
+  --line: rgba(255,255,255,0.05);
+  --line-light: rgba(255,255,255,0.08);
+  --line-focus: var(--brand-light);
+  --divider: rgba(255,255,255,0.03);
+
+  /* Semantic colors — Salesforce standard */
+  --green: #4BCA81;
+  --green-light: #4BCA81;
+  --green-bg: rgba(75,202,129,0.10);
+  --red: #EA001E;
+  --red-light: #FF5D2D;
+  --red-bg: rgba(234,0,30,0.08);
+  --orange: #FE9339;
+  --orange-light: #FE9339;
+  --orange-bg: rgba(254,147,57,0.08);
+  --yellow: #E4A201;
+  --yellow-light: #FCC003;
+  --yellow-bg: rgba(228,162,1,0.08);
+  --cyan: #1FC9E8;
+  --cyan-light: #1FC9E8;
+  --cyan-bg: rgba(31,201,232,0.08);
+  --purple: #8B5CF6;
+  --purple-light: #A78BFA;
+  --purple-bg: rgba(139,92,246,0.08);
+
+  /* Kanban Columns */
+  --col-backlog: #5E6C84;
+  --col-todo: #8B5CF6;
+  --col-inprogress: #1B96FF;
+  --col-review: #FE9339;
+  --col-done: #4BCA81;
+  --col-blocked: #EA001E;
+
+  /* Chart — blue-dominant palette */
+  --chart-blue: #1B96FF;
+  --chart-green: #4BCA81;
+  --chart-red: #FF5D2D;
+  --chart-orange: #FE9339;
+  --chart-purple: #8B5CF6;
+  --chart-cyan: #1FC9E8;
+  --chart-yellow: #E4A201;
+  --chart-lime: #84CC16;
+  --chart-gray: #5E6C84;
+  --chart-pink: #E0479E;
+  --chart-indigo: #5A67D8;
+
+  /* Sizing — compact 4px grid */
+  --header-h: 48px;
+  --sidebar-w: 260px;
+  --footer-h: 200px;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Typography */
+  --font: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 18px;
+  --fs-2xl: 24px;
+  --fs-3xl: 32px;
+  --fs-4xl: 40px;
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+
+  /* Shadows — SLDS elevation */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.20);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.25);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.30);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.40);
+  --shadow-focus: 0 0 0 3px rgba(27,150,255,0.35);
+  --shadow-brand-glow: 0 0 0 1px rgba(27,150,255,0.25);
+
+  /* Transitions */
+  --ease: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --ease-out: cubic-bezier(0, 0, 0.38, 0.9);
+  --dur: 0.12s;
+  --dur-slow: 0.25s;
+
+  /* Modal */
+  --modal-w: 760px;
+  --modal-max-h: 85vh;
+
+  /* Gradients — minimal */
+  --grad-blue: linear-gradient(135deg, #1B96FF, #0176D3);
+  --grad-green: linear-gradient(135deg, #4BCA81, #2E844A);
+  --grad-red: linear-gradient(135deg, #FF5D2D, #EA001E);
+  --grad-purple: linear-gradient(135deg, #A78BFA, #8B5CF6);
+  --grad-cyan: linear-gradient(135deg, #1FC9E8, #0D9DDA);
+  --grad-orange: linear-gradient(135deg, #FE9339, #DD7A01);
+
+  /* ══════════════════════════════════════════════════
+     U2DIA 디자인 토큰 — 표준 시맨틱 API
+     ══════════════════════════════════════════════════ */
+
+  /* ── 표준 색상 토큰 (--color-*) ── */
+  /* 다른 프레임워크·컴포넌트와 호환되는 표준 네이밍 */
+  --color-primary:    var(--brand);         /* #0176D3  U2DIA 브랜드 블루 */
+  --color-secondary:  var(--purple);        /* #8B5CF6  보조 액센트 퍼플 */
+  --color-bg:         var(--bg);            /* #16181D  메인 배경 */
+  --color-surface:    var(--card);          /* #272B35  카드/서피스 */
+  --color-text:       var(--text);          /* #ECEDEE  기본 텍스트 */
+  --color-border:     var(--line);          /* rgba(255,255,255,0.05)  테두리 */
+  --color-accent:     var(--brand-light);   /* #1B96FF  강조/하이라이트 */
+
+  /* ── 호환성 별칭 ── */
+  /* sidebar.css, cli.css 에서 참조하는 미선언 변수 보완 */
+  --text-muted:       var(--muted);                /* #5E6C84  약화 텍스트 */
+  --bg-sunken:        #13151C;                     /* --bg보다 어두운 최심층 배경 */
+  --bg-hover:         rgba(255,255,255,0.04);      /* 마우스오버 미묘한 배경 */
+  --line-solid:       #2a2f3e;                     /* 불투명 테두리 (스크롤바 등) */
+
+  /* ── 글래스 서피스 토큰 ── */
+  /* components.css·layout.css에 반복되는 backdropblur 패널 패턴 */
+  --surface-glass:    rgba(39,43,53,0.65);         /* 블러 패널 배경 */
+  --surface-glass-sm: rgba(39,43,53,0.70);         /* 블러 카드 (task-card 등) */
+  --border-glass:     rgba(255,255,255,0.06);      /* 블러 패널 테두리 */
+  --border-hover:     rgba(255,255,255,0.10);      /* 호버 시 테두리 강조 */
+  --border-subtle:    rgba(255,255,255,0.03);      /* 극미세 구분선 */
+  --border-mid:       rgba(255,255,255,0.04);      /* 중간 구분선 */
+  --border-strong:    rgba(255,255,255,0.08);      /* 강조 구분선 */
+
+  /* ── 배지 배경 (진한 틴트, 다크모드 전용) ── */
+  --yellow-tint:      rgba(228,162,1,0.14);        /* 노란 배지 배경 */
+  --orange-tint:      rgba(254,147,57,0.14);       /* 오렌지 배지 배경 */
+  --orange-bg-faint:  rgba(254,147,57,0.04);       /* 극미세 오렌지 배경 (ralph 로그 등) */
+  --red-tint:         rgba(234,0,30,0.12);         /* 빨간 배지 배경 */
+
+  /* ── 호버 배경 극미세 변형 ── */
+  --bg-hover-subtle: rgba(255,255,255,0.015);  /* 로그 항목 호버 */
+  --bg-hover-micro:  rgba(255,255,255,0.02);   /* 피드 항목 호버 */
+
+  /* ── 칸반 컬럼 배경·테두리 토큰 (투명도 적용) ── */
+  --col-backlog-bg:          rgba(94,108,132,0.08);
+  --col-backlog-border:      rgba(94,108,132,0.15);
+  --col-backlog-header-bg:   rgba(94,108,132,0.12);
+  --col-backlog-count-bg:    rgba(94,108,132,0.15);
+
+  --col-todo-bg:             rgba(139,92,246,0.08);
+  --col-todo-border:         rgba(139,92,246,0.15);
+  --col-todo-header-bg:      rgba(139,92,246,0.12);
+  --col-todo-count-bg:       rgba(139,92,246,0.15);
+
+  --col-inprogress-bg:       rgba(27,150,255,0.08);
+  --col-inprogress-border:   rgba(27,150,255,0.15);
+  --col-inprogress-header-bg:rgba(27,150,255,0.12);
+  --col-inprogress-count-bg: rgba(27,150,255,0.15);
+
+  --col-review-bg:           rgba(254,147,57,0.08);
+  --col-review-border:       rgba(254,147,57,0.15);
+  --col-review-header-bg:    rgba(254,147,57,0.12);
+  --col-review-count-bg:     rgba(254,147,57,0.15);
+
+  --col-done-bg:             rgba(75,202,129,0.08);
+  --col-done-border:         rgba(75,202,129,0.15);
+  --col-done-header-bg:      rgba(75,202,129,0.12);
+  --col-done-count-bg:       rgba(75,202,129,0.15);
+
+  --col-blocked-bg:          rgba(234,0,30,0.08);
+  --col-blocked-border:      rgba(234,0,30,0.15);
+  --col-blocked-header-bg:   rgba(234,0,30,0.12);
+  --col-blocked-count-bg:    rgba(234,0,30,0.15);
+
+  /* ── 애니메이션 타이밍 토큰 ── */
+  --anim-card-enter:  0.2s;
+  --anim-card-move:   0.3s;
+
+  /* ── 네비게이션 바 컬러 토큰 ── */
+  --nav-bg:               var(--bg-elevated);     /* 상단 바 배경 */
+  --nav-text:             var(--text-secondary);  /* 상단 바 로고/부제 텍스트 */
+  --nav-border:           var(--line);            /* 상단 바 하단 구분선 */
+  --nav-active-bg:        var(--brand-bg);        /* 활성 탭 배경 */
+  --nav-active-border:    var(--brand);           /* 활성 탭 좌측 강조선 */
+  --nav-active-text:      var(--brand-light);     /* 활성 탭 텍스트 */
+
+  /* ── 사이드바 컬러 토큰 ── */
+  --sidebar-bg:           var(--bg-elevated);     /* 사이드바 전체 배경 */
+  --sidebar-header-bg:    var(--bg-sunken);       /* 사이드바 헤더 배경 */
+  --sidebar-border:       var(--line);            /* 사이드바 우측 테두리 */
+  --sidebar-active-bg:    var(--brand-bg);        /* 선택 항목 배경 */
+  --sidebar-active-border:var(--brand);           /* 선택 항목 좌측 강조선 */
+  --sidebar-active-text:  var(--brand-light);     /* 선택 항목 텍스트 */
+
+  /* ══════════════════════════════════════════════════
+     UI 컴포넌트 토큰 — 버튼 / 폼 / 모달 / 드롭다운
+     ══════════════════════════════════════════════════ */
+
+  /* ── 버튼 기본 (btn) ── */
+  --btn-bg:                  var(--card);
+  --btn-bg-hover:            var(--card-hover);
+  --btn-border:              var(--line-light);
+  --btn-text:                var(--text);
+  --btn-focus-ring:          var(--shadow-focus);
+
+  /* ── 버튼 Primary ── */
+  --btn-primary-bg:          var(--brand);
+  --btn-primary-bg-hover:    var(--brand-dark);
+  --btn-primary-bg-active:   #012f5e;
+  --btn-primary-border:      var(--brand);
+  --btn-primary-text:        #fff;
+
+  /* ── 버튼 Secondary ── */
+  --btn-secondary-bg:        var(--panel);
+  --btn-secondary-bg-hover:  var(--card);
+  --btn-secondary-border:    var(--line-light);
+  --btn-secondary-text:      var(--text-secondary);
+
+  /* ── 버튼 Danger ── */
+  --btn-danger-bg:           var(--red);
+  --btn-danger-bg-hover:     #c2001a;
+  --btn-danger-border:       var(--red);
+  --btn-danger-text:         #fff;
+
+  /* ── 버튼 Ghost ── */
+  --btn-ghost-bg:            transparent;
+  --btn-ghost-bg-hover:      rgba(255,255,255,0.05);
+  --btn-ghost-border:        transparent;
+  --btn-ghost-text:          var(--text-secondary);
+
+  /* ── 버튼 Disabled (공통) ── */
+  --btn-disabled-bg:         rgba(255,255,255,0.04);
+  --btn-disabled-border:     transparent;
+  --btn-disabled-text:       var(--muted);
+
+  /* ── 폼 입력 (input / select / textarea) ── */
+  --input-bg:                var(--bg-elevated);
+  --input-border:            var(--line-light);
+  --input-border-focus:      var(--brand-light);
+  --input-border-disabled:   var(--line);
+  --input-text:              var(--text);
+  --input-placeholder:       var(--muted);
+  --input-focus-ring:        var(--shadow-focus);
+
+  /* ── 드롭다운 ── */
+  --dropdown-bg:             var(--card);
+  --dropdown-border:         var(--line-light);
+  --dropdown-item-hover:     var(--card-hover);
+  --dropdown-item-active-bg: var(--brand-bg);
+  --dropdown-item-active-text: var(--brand-light);
+  --dropdown-item-text:      var(--text);
+
+  /* ── 모달 ── */
+  --modal-bg:                var(--bg-elevated);
+  --modal-overlay-bg:        rgba(0,0,0,0.65);
+  --modal-border:            var(--line);
+  --modal-header-border:     var(--line);
+  --modal-footer-border:     var(--line);
+
+  /* ══════════════════════════════════════════════════
+     칸반 카드 색상 토큰
+     ══════════════════════════════════════════════════ */
+  --kb-card-bg:              var(--card);              /* #272B35  카드 기본 배경 */
+  --kb-card-border:          var(--line);              /* rgba(255,255,255,0.05)  기본 테두리 */
+  --kb-card-shadow:          none;                     /* 기본 그림자 없음 */
+  --kb-card-border-hover:    var(--brand);             /* #0176D3  호버 테두리 */
+  --kb-card-shadow-hover:    var(--shadow-sm);         /* 0 2px 4px rgba(0,0,0,0.20)  호버 그림자 */
+  --kb-card-border-active:   var(--brand-dark);        /* #014486  눌림 테두리 */
+
+  /* ══════════════════════════════════════════════════
+     우선순위 라벨 색상 토큰
+     (High=빨강계열, Medium=주황계열, Low=초록계열)
+     ══════════════════════════════════════════════════ */
+  --pri-critical-bg:         var(--red-tint);          /* rgba(234,0,30,0.12)  Critical 배경 */
+  --pri-critical-color:      var(--red);               /* #EA001E  Critical 텍스트 */
+  --pri-high-bg:             var(--red-bg);            /* rgba(234,0,30,0.08)  High 빨강계열 배경 */
+  --pri-high-color:          var(--red-light);         /* #FF5D2D  High 빨강계열 텍스트 */
+  --pri-medium-bg:           var(--orange-bg);         /* rgba(254,147,57,0.08)  Medium 주황계열 배경 */
+  --pri-medium-color:        var(--orange);            /* #FE9339  Medium 주황계열 텍스트 */
+  --pri-low-bg:              var(--green-bg);          /* rgba(75,202,129,0.10)  Low 초록계열 배경 */
+  --pri-low-color:           var(--green);             /* #4BCA81  Low 초록계열 텍스트 */
+
+  /* ══════════════════════════════════════════════════
+     상태 배지 색상 토큰
+     ══════════════════════════════════════════════════ */
+  --badge-backlog-bg:        var(--col-backlog-header-bg);  /* rgba(94,108,132,0.12) */
+  --badge-backlog-color:     var(--muted);                  /* #5E6C84 */
+  --badge-todo-bg:           var(--purple-bg);              /* rgba(139,92,246,0.08) */
+  --badge-todo-color:        var(--purple);                 /* #8B5CF6 */
+  --badge-inprogress-bg:     var(--brand-bg);               /* rgba(27,150,255,0.08) */
+  --badge-inprogress-color:  var(--brand-light);            /* #1B96FF */
+  --badge-review-bg:         var(--orange-bg);              /* rgba(254,147,57,0.08) */
+  --badge-review-color:      var(--orange);                 /* #FE9339 */
+  --badge-done-bg:           var(--green-bg);               /* rgba(75,202,129,0.10) */
+  --badge-done-color:        var(--green);                  /* #4BCA81 */
+  --badge-blocked-bg:        var(--red-bg);                 /* rgba(234,0,30,0.08) */
+  --badge-blocked-color:     var(--red-light);              /* #FF5D2D */
+
+  /* ══════════════════════════════════════════════════
+     태그 칩 색상 토큰
+     ══════════════════════════════════════════════════ */
+  --tag-bg:                  var(--panel);            /* #22252E  기본 배경 */
+  --tag-color:               var(--muted);            /* #5E6C84  기본 텍스트 */
+  --tag-border:              var(--line);             /* rgba(255,255,255,0.05)  기본 테두리 */
+  --tag-bg-hover:            var(--card);             /* #272B35  호버 배경 */
+  --tag-border-hover:        var(--line-light);       /* rgba(255,255,255,0.08)  호버 테두리 */
+}

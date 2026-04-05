@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U2DIA AI SERVER AGENT — 로그인</title>
+<link rel="stylesheet" href="/css/variables.css">
+<link rel="stylesheet" href="/css/layout.css">
+<link rel="stylesheet" href="/css/components.css">
+<style>
+html, body { overflow: auto; }
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+.login-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 380px;
+  max-width: 90vw;
+  text-align: center;
+}
+.login-box .logo-icon {
+  width: 48px; height: 48px;
+  margin: 0 auto 16px;
+  font-size: 22px;
+}
+.login-box h1 { font-size: var(--fs-lg); margin-bottom: 8px; }
+.login-box p { font-size: var(--fs-sm); color: var(--muted); margin-bottom: 24px; }
+.login-box input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-family: var(--mono);
+  text-align: center;
+  letter-spacing: 2px;
+}
+.login-box input:focus { outline: none; border-color: var(--brand); }
+.login-box .btn { width: 100%; justify-content: center; padding: 10px; }
+.login-error { color: var(--red); font-size: var(--fs-sm); margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="logo-icon">U</div>
+    <h1>U2DIA AI SERVER AGENT</h1>
+    <p>라이선스 키를 입력하세요</p>
+    <form id="loginForm" onsubmit="return doLogin(event)">
+      <input type="text" id="licenseKey" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" autocomplete="off" autofocus>
+      <button class="btn btn-primary" type="submit">로그인</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+<script>
+async function doLogin(e) {
+  e.preventDefault();
+  const key = document.getElementById('licenseKey').value.trim();
+  if (!key) return false;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ license_key: key }),
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (data.ok) {
+      location.href = '/';
+    } else {
+      errEl.textContent = data.message || '인증 실패';
+      errEl.style.display = 'block';
+    }
+  } catch (err) {
+    errEl.textContent = '서버 연결 실패';
+    errEl.style.display = 'block';
+  }
+  return false;
+}
+// 자동 포맷 (4-4-4-4)
+document.getElementById('licenseKey').addEventListener('input', function(e) {
+  let v = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 16);
+  this.value = v.match(/.{1,4}/g)?.join('-') || v;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "u2dia-ai-server-agent",
+  "version": "1.0.0",
+  "description": "U2DIA AI SERVER AGENT — 프론트엔드",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.u2dia.ai-server-agent",
+    "productName": "U2DIA AI SERVER AGENT",
+    "directories": { "output": "../../release" },
+    "win": {
+      "target": "nsis",
+      "icon": "../assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "U2DIA AI SERVER AGENT"
+    },
+    "extraResources": [
+      { "from": "../assets", "to": "assets" }
+    ]
+  }
+}

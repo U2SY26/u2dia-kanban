@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>U2DIA AI SERVER AGENT — 서버 연결</title>
+<style>
+:root{--bg:#0f1117;--card:#1e2235;--line:#2d3148;--text:#e2e8f0;--muted:#64748b;--brand:#3b82f6;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100vh;background:var(--bg);color:var(--text);font-family:'Segoe UI','Pretendard',sans-serif;display:flex;align-items:center;justify-content:center}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:36px;width:340px;text-align:center}
+.logo{width:48px;height:48px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin:0 auto 16px}
+h1{font-size:15px;margin-bottom:4px}
+p{font-size:11px;color:var(--muted);margin-bottom:20px}
+input{width:100%;padding:10px;background:#1a1d2e;border:1px solid var(--line);border-radius:4px;color:var(--text);font-size:13px;font-family:'Consolas',monospace;text-align:center;margin-bottom:10px}
+input:focus{outline:none;border-color:var(--brand)}
+button{width:100%;padding:10px;background:var(--brand);border:none;border-radius:4px;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+button:hover{opacity:.9}
+button:disabled{opacity:.5;cursor:not-allowed}
+.err{color:var(--red);font-size:11px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">U</div>
+  <h1>U2DIA AI SERVER AGENT</h1>
+  <p>서버 주소를 입력하세요</p>
+  <form id="form" onsubmit="return doConnect(event)">
+    <input type="text" id="url" value="http://localhost:5555" placeholder="http://IP:PORT" autofocus>
+    <button type="submit" id="btn">연결</button>
+    <div class="err" id="err"></div>
+  </form>
+</div>
+<script>
+async function doConnect(e) {
+  e.preventDefault();
+  const url = document.getElementById('url').value.trim();
+  if (!url) return false;
+  const btn = document.getElementById('btn');
+  const err = document.getElementById('err');
+  btn.disabled = true;
+  btn.textContent = '연결 중...';
+  err.style.display = 'none';
+
+  try {
+    if (window.electronAPI?.serverConnect) {
+      // IPC 경로 (패키징된 exe)
+      const res = await window.electronAPI.serverConnect(url);
+      if (!res.ok) {
+        throw new Error(res.error || '연결 실패');
+      }
+      // main.js가 openMainWindow를 호출하므로 여기서 종료
+      return false;
+    } else {
+      // 개발 모드 fallback: 직접 네비게이션
+      const resp = await fetch(url + '/api/teams');
+      const data = await resp.json();
+      if (data.ok) {
+        location.href = url;
+      } else {
+        throw new Error('서버 응답 오류');
+      }
+    }
+  } catch (ex) {
+    err.textContent = ex.message || '연결 실패';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '연결';
+  }
+  return false;
+}
+</script>
+</body>
+</html>

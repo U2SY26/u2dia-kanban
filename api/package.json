@@ -1,0 +1,24 @@
+{
+  "name": "u2dia-kanban-api",
+  "version": "1.0.0",
+  "description": "U2DIA Kanban Board - Node.js/Express RESTful API (컬럼, 카드, 사용자 CRUD)",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "js-yaml": "^4.1.1",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

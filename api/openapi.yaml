@@ -1,0 +1,1261 @@
+openapi: 3.0.3
+
+info:
+  title: U2DIA Kanban Board API
+  version: 1.0.0
+  description: |
+    U2DIA 칸반보드 RESTful API (Node.js/Express + SQLite)
+
+    ## 데이터 모델 관계
+
+    ```
+    Board (1) ──────< Column (N) ──────< Card (N)
+      │                                    │
+      └── owner_id ──> User (1)            └── assignee_id ──> User (1)
+    ```
+
+    | 관계 | 설명 |
+    |------|------|
+    | Board → Column | 하나의 보드는 여러 컬럼을 가집니다 (board_id FK) |
+    | Column → Card  | 하나의 컬럼은 여러 카드를 가집니다 (column_id FK) |
+    | Board → Card   | 카드는 보드에도 직접 귀속됩니다 (board_id FK, 성능 최적화) |
+    | User → Card    | 카드는 한 명의 담당자(User)를 가질 수 있습니다 (assignee_id, nullable) |
+    | User → Board   | 보드는 한 명의 소유자(User)를 가질 수 있습니다 (owner_id, nullable) |
+
+    ## 보안 처리
+
+    - **인증**: JWT (HS256) — `Authorization: Bearer <token>` 헤더
+    - **인가**: Role 기반 접근 제어 (`admin` / `member` / `viewer`)
+    - **비밀번호**: PBKDF2-SHA256, 310,000회 반복 (NIST 2024 권장)
+    - **Rate Limit**: 인증 엔드포인트 분당 20회, 쓰기 작업 분당 60회
+    - **SQL Injection**: 모든 쿼리는 Parameterized Query (better-sqlite3 prepared statements) 사용
+    - **XSS 방지**: 모든 문자열 입력에서 HTML 태그 및 엔티티 제거 (서버사이드 sanitize)
+    - **입력 검증**: UUID 포맷, 이메일 형식, 열거형(enum), 날짜 형식, 길이 제한 적용
+
+    ## 인증 방법
+
+    1. `POST /api/auth/register` 또는 `POST /api/auth/login` 으로 토큰 발급
+    2. 이후 요청에 `Authorization: Bearer <accessToken>` 헤더 포함
+    3. 액세스 토큰 만료 시 `POST /api/auth/refresh` 로 갱신
+
+    ## 공통 응답 형식
+
+    ```json
+    { "ok": true, "data": { ... } }       // 성공
+    { "ok": true, "message": "..." }      // 성공 (메시지)
+    { "ok": false, "error": "..." }       // 실패
+    ```
+
+servers:
+  - url: http://localhost:3001
+    description: 로컬 개발 서버
+
+tags:
+  - name: health
+    description: 서버 상태 확인
+  - name: auth
+    description: 인증 (회원가입, 로그인, 토큰 갱신)
+  - name: users
+    description: 사용자 관리 (보드 소유자 / 카드 담당자)
+  - name: columns
+    description: 컬럼 관리 (보드 하위)
+  - name: cards
+    description: 카드 관리 (컬럼 하위, 컬럼 간 이동 지원)
+
+# ────────────────────────────────────────────────────────────
+# 공통 컴포넌트
+# ────────────────────────────────────────────────────────────
+components:
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 리소스 UUID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    boardIdParam:
+      name: boardId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 보드 UUID
+      example: "550e8400-e29b-41d4-a716-446655440001"
+
+    columnIdParam:
+      name: columnId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 컬럼 UUID
+      example: "550e8400-e29b-41d4-a716-446655440002"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT 액세스 토큰. `POST /api/auth/login` 또는 `POST /api/auth/register` 응답의 `accessToken` 사용.
+
+  schemas:
+    # ── 인증 요청/응답 ──
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:     { type: string, minLength: 1, maxLength: 100, example: "홍길동" }
+        email:    { type: string, format: email, example: "hong@example.com" }
+        password: { type: string, minLength: 8, maxLength: 128, example: "s3cur3P@ss!" }
+        role:     { type: string, enum: [member, admin, viewer], default: member }
+        avatar_url: { type: string, format: uri, maxLength: 500, nullable: true }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string, format: email, example: "hong@example.com" }
+        password: { type: string, example: "s3cur3P@ss!" }
+
+    TokenResponse:
+      type: object
+      properties:
+        ok:           { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            user:         { $ref: '#/components/schemas/User' }
+            accessToken:  { type: string, description: "액세스 토큰 (24시간 유효)" }
+            refreshToken: { type: string, description: "리프레시 토큰 (30일 유효)" }
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    # ── 공통 타임스탬프 ──
+    Timestamps:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: 생성 시각 (UTC ISO 8601)
+          example: "2024-01-15T09:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: 최종 수정 시각 (UTC ISO 8601)
+          example: "2024-01-15T09:30:00.000Z"
+
+    # ── 성공 응답 래퍼 ──
+    SuccessResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "작업이 완료되었습니다"
+
+    # ── 에러 응답 ──
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          example: false
+        code:
+          type: string
+          description: "에러 코드 (e.g. UNAUTHORIZED, NOT_FOUND, VALIDATION_ERROR)"
+          example: "NOT_FOUND"
+        error:
+          type: string
+          example: "리소스를 찾을 수 없습니다"
+        stack:
+          type: string
+          description: "스택 트레이스 (개발 환경에서만 포함)"
+
+    # ────────────────────────────────────────────────────────
+    # User 스키마
+    # ────────────────────────────────────────────────────────
+    UserRole:
+      type: string
+      enum: [member, admin, viewer]
+      default: member
+      description: |
+        - `member`: 일반 멤버 (기본값)
+        - `admin`: 관리자 (전체 수정 권한)
+        - `viewer`: 읽기 전용
+
+    User:
+      allOf:
+        - type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 사용자 UUID (서버 자동 생성)
+              example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            name:
+              type: string
+              minLength: 1
+              maxLength: 100
+              description: 표시 이름 (HTML 태그 자동 제거)
+              example: "홍길동"
+            email:
+              type: string
+              format: email
+              maxLength: 320
+              nullable: true
+              description: 이메일 (UNIQUE, 소문자 정규화)
+              example: "hong@example.com"
+            role:
+              $ref: '#/components/schemas/UserRole'
+            avatar_url:
+              type: string
+              format: uri
+              maxLength: 500
+              nullable: true
+              description: 프로필 이미지 URL (http/https만 허용)
+              example: "https://cdn.example.com/avatars/hong.jpg"
+        - $ref: '#/components/schemas/Timestamps'
+
+    UserCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "홍길동"
+        email:
+          type: string
+          format: email
+          example: "hong@example.com"
+        role:
+          $ref: '#/components/schemas/UserRole'
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 500
+          example: "https://cdn.example.com/avatars/hong.jpg"
+
+    UserUpdateRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "홍길동 (수정)"
+        email:
+          type: string
+          format: email
+          example: "hong-new@example.com"
+        role:
+          $ref: '#/components/schemas/UserRole'
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+
+    # ────────────────────────────────────────────────────────
+    # Column 스키마
+    # ────────────────────────────────────────────────────────
+    Column:
+      allOf:
+        - type: object
+          required: [id, board_id, title, position]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 컬럼 UUID
+              example: "c0l0000-0000-0000-0000-000000000001"
+            board_id:
+              type: string
+              format: uuid
+              description: 소속 보드 UUID (FK → kb_boards.id)
+              example: "b0a00000-0000-0000-0000-000000000001"
+            title:
+              type: string
+              minLength: 1
+              maxLength: 100
+              description: 컬럼 제목 (HTML 태그 자동 제거)
+              example: "진행 중"
+            position:
+              type: integer
+              minimum: 0
+              description: 컬럼 순서 (0부터 시작, 보드 내 오름차순)
+              example: 1
+            wip_limit:
+              type: integer
+              minimum: 1
+              maximum: 9999
+              nullable: true
+              description: WIP 제한 (Work In Progress 최대 카드 수, null = 무제한)
+              example: 5
+        - $ref: '#/components/schemas/Timestamps'
+
+    ColumnCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "할 일"
+        position:
+          type: integer
+          minimum: 0
+          description: "미지정 시 마지막 순서 자동 부여"
+          example: 0
+        wip_limit:
+          type: integer
+          minimum: 1
+          maximum: 9999
+          nullable: true
+          example: 10
+
+    ColumnUpdateRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "완료"
+        position:
+          type: integer
+          minimum: 0
+          example: 2
+        wip_limit:
+          type: integer
+          minimum: 1
+          maximum: 9999
+          nullable: true
+          example: null
+
+    ReorderItem:
+      type: object
+      required: [id, position]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 리소스 UUID
+        position:
+          type: integer
+          minimum: 0
+          description: 새 순서
+
+    ReorderRequest:
+      type: object
+      required: [orders]
+      properties:
+        orders:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ReorderItem'
+          example:
+            - { id: "c0l00001-0000-0000-0000-000000000001", position: 0 }
+            - { id: "c0l00001-0000-0000-0000-000000000002", position: 1 }
+
+    # ────────────────────────────────────────────────────────
+    # Card 스키마
+    # ────────────────────────────────────────────────────────
+    CardPriority:
+      type: string
+      enum: [low, medium, high, urgent]
+      default: medium
+      description: |
+        카드 우선순위
+        - `low`: 낮음
+        - `medium`: 보통 (기본값)
+        - `high`: 높음
+        - `urgent`: 긴급
+
+    Card:
+      allOf:
+        - type: object
+          required: [id, column_id, board_id, title, position, priority]
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 카드 UUID
+              example: "ca000000-0000-0000-0000-000000000001"
+            column_id:
+              type: string
+              format: uuid
+              description: 소속 컬럼 UUID (FK → kb_columns.id, 이동 시 변경)
+              example: "c0l00000-0000-0000-0000-000000000001"
+            board_id:
+              type: string
+              format: uuid
+              description: 소속 보드 UUID (FK → kb_boards.id, 성능 최적화용 비정규화 필드)
+              example: "b0a00000-0000-0000-0000-000000000001"
+            title:
+              type: string
+              minLength: 1
+              maxLength: 200
+              description: 카드 제목 (HTML 태그 자동 제거)
+              example: "로그인 페이지 구현"
+            description:
+              type: string
+              maxLength: 5000
+              nullable: true
+              description: 상세 설명 (HTML 태그 자동 제거)
+              example: "OAuth2 + JWT 기반 로그인 구현"
+            position:
+              type: integer
+              minimum: 0
+              description: 컬럼 내 카드 순서 (0부터 시작)
+              example: 0
+            priority:
+              $ref: '#/components/schemas/CardPriority'
+            assignee_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: 담당자 사용자 UUID (FK → kb_users.id, 존재 검증 필수)
+              example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            due_date:
+              type: string
+              format: date
+              nullable: true
+              description: 마감일 (YYYY-MM-DD 형식)
+              example: "2024-12-31"
+            labels:
+              type: array
+              maxItems: 20
+              items:
+                type: string
+                maxLength: 50
+              description: 레이블 목록 (각 항목 50자 이하, 최대 20개)
+              example: ["frontend", "auth", "P1"]
+        - $ref: '#/components/schemas/Timestamps'
+
+    CardCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "버그 수정: 로그인 오류"
+        description:
+          type: string
+          maxLength: 5000
+          example: "특정 브라우저에서 로그인 실패 문제 수정"
+        position:
+          type: integer
+          minimum: 0
+          description: "미지정 시 마지막 순서 자동 부여"
+        priority:
+          $ref: '#/components/schemas/CardPriority'
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "존재하는 사용자 UUID여야 함 (관계 검증)"
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        due_date:
+          type: string
+          format: date
+          example: "2024-12-31"
+        labels:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 50
+          example: ["bug", "urgent"]
+
+    CardUpdateRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+          nullable: true
+        column_id:
+          type: string
+          format: uuid
+          description: "변경 시 컬럼 존재 검증 수행"
+        position:
+          type: integer
+          minimum: 0
+        priority:
+          $ref: '#/components/schemas/CardPriority'
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "변경 시 사용자 존재 검증 수행"
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        labels:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 50
+
+    CardMoveRequest:
+      type: object
+      required: [column_id, position]
+      properties:
+        column_id:
+          type: string
+          format: uuid
+          description: 이동할 대상 컬럼 UUID (존재 검증)
+          example: "c0l00000-0000-0000-0000-000000000002"
+        position:
+          type: integer
+          minimum: 0
+          description: 대상 컬럼 내 새 position
+          example: 0
+
+  responses:
+    NotFound:
+      description: 리소스를 찾을 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            ok: false
+            error: "리소스를 찾을 수 없습니다"
+
+    BadRequest:
+      description: 잘못된 요청 (입력값 검증 실패)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_field:
+              summary: 필수 필드 누락
+              value: { ok: false, error: "필수 필드 누락: title" }
+            invalid_uuid:
+              summary: UUID 형식 오류
+              value: { ok: false, error: "유효하지 않은 ID 형식: id" }
+            invalid_email:
+              summary: 이메일 형식 오류
+              value: { ok: false, error: "유효하지 않은 이메일 형식입니다" }
+
+    Conflict:
+      description: 충돌 (중복 데이터)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            ok: false
+            error: "이미 사용 중인 이메일입니다"
+
+    Unauthorized:
+      description: 인증 실패 (토큰 없음, 만료, 서명 오류)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          examples:
+            no_token:
+              summary: 토큰 없음
+              value: { ok: false, code: "UNAUTHORIZED", error: "인증이 필요합니다" }
+            expired:
+              summary: 토큰 만료
+              value: { ok: false, code: "TOKEN_EXPIRED", error: "토큰이 만료되었습니다" }
+
+    Forbidden:
+      description: 권한 부족
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            ok: false
+            code: "FORBIDDEN"
+            error: "이 작업에는 admin 역할이 필요합니다"
+
+    TooManyRequests:
+      description: 요청 횟수 초과 (Rate Limit)
+      headers:
+        Retry-After:
+          schema: { type: integer }
+          description: 재시도까지 대기 시간(초)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            ok: false
+            code: "RATE_LIMIT_EXCEEDED"
+            error: "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도하세요"
+
+    ServerError:
+      description: 서버 내부 오류
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+# ────────────────────────────────────────────────────────────
+# 엔드포인트 정의
+# ────────────────────────────────────────────────────────────
+paths:
+
+  # ── Auth ────────────────────────────────────────────────
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: 회원가입
+      operationId: authRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        "201":
+          description: 회원가입 성공 + 토큰 발급
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "409": { $ref: '#/components/responses/Conflict' }
+        "429": { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: 로그인
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        "200":
+          description: 로그인 성공 + 토큰 발급
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "429": { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      summary: 액세스 토큰 갱신
+      operationId: authRefresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        "200":
+          description: 새 액세스 토큰 발급
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      accessToken: { type: string }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "429": { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: 현재 사용자 정보 조회
+      operationId: authMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 현재 로그인된 사용자 정보
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { $ref: '#/components/schemas/User' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Health ──────────────────────────────────────────────
+  /health:
+    get:
+      tags: [health]
+      summary: 서버 상태 확인
+      operationId: getHealth
+      responses:
+        "200":
+          description: 서버 정상 동작 중
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:    { type: boolean, example: true }
+                  service: { type: string, example: "u2dia-kanban-api" }
+                  version: { type: string, example: "1.0.0" }
+
+  # ── Users ────────────────────────────────────────────────
+  /api/users:
+    get:
+      tags: [users]
+      summary: 사용자 전체 목록 조회
+      operationId: listUsers
+      description: 모든 사용자를 생성일 기준 내림차순으로 반환합니다.
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [users]
+      summary: 사용자 생성
+      operationId: createUser
+      description: |
+        새 사용자를 생성합니다.
+        - `name` 필드는 필수입니다.
+        - `email`은 중복 불가, 소문자 정규화됩니다.
+        - 모든 문자열 입력에서 HTML 태그가 제거됩니다 (XSS 방지).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreateRequest' }
+            example:
+              name: "홍길동"
+              email: "hong@example.com"
+              role: "member"
+      responses:
+        "201":
+          description: 사용자 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/User' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "409": { $ref: '#/components/responses/Conflict' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/idParam'
+
+    get:
+      tags: [users]
+      summary: 사용자 단건 조회
+      operationId: getUserById
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/User' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    put:
+      tags: [users]
+      summary: 사용자 수정
+      operationId: updateUser
+      description: |
+        사용자 정보를 수정합니다. 전달된 필드만 업데이트됩니다.
+        - 이메일 변경 시 중복 확인을 수행합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdateRequest' }
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/User' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { $ref: '#/components/responses/Conflict' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    delete:
+      tags: [users]
+      summary: 사용자 삭제
+      operationId: deleteUser
+      description: |
+        사용자를 삭제합니다.
+        - 삭제된 사용자가 소유한 보드의 `owner_id`는 NULL로 설정됩니다.
+        - 삭제된 사용자가 담당자인 카드의 `assignee_id`는 NULL로 설정됩니다.
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:      { type: boolean, example: true }
+                  message: { type: string, example: "사용자가 삭제되었습니다" }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  # ── Columns ──────────────────────────────────────────────
+  /api/boards/{boardId}/columns:
+    parameters:
+      - $ref: '#/components/parameters/boardIdParam'
+
+    get:
+      tags: [columns]
+      summary: 보드의 컬럼 목록 조회
+      operationId: listColumns
+      description: 보드에 속한 모든 컬럼을 `position` 오름차순으로 반환합니다.
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Column' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [columns]
+      summary: 컬럼 생성
+      operationId: createColumn
+      description: |
+        보드에 새 컬럼을 추가합니다.
+        - `position` 미지정 시 마지막 순서가 자동 부여됩니다.
+        - `wip_limit` 설정 시 해당 컬럼의 최대 카드 수를 제한합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ColumnCreateRequest' }
+            example:
+              title: "진행 중"
+              wip_limit: 5
+      responses:
+        "201":
+          description: 컬럼 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Column' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/boards/{boardId}/columns/reorder:
+    parameters:
+      - $ref: '#/components/parameters/boardIdParam'
+
+    put:
+      tags: [columns]
+      summary: 컬럼 순서 일괄 변경 (Drag & Drop)
+      operationId: reorderColumns
+      description: |
+        보드의 컬럼 순서를 일괄 변경합니다.
+        - 모든 컬럼 ID와 새 position 값을 전달합니다.
+        - 트랜잭션으로 처리되므로 부분 실패가 없습니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReorderRequest' }
+      responses:
+        "200":
+          description: 순서 변경 성공 (변경 후 전체 목록 반환)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Column' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/columns/{id}:
+    parameters:
+      - $ref: '#/components/parameters/idParam'
+
+    get:
+      tags: [columns]
+      summary: 컬럼 단건 조회
+      operationId: getColumnById
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Column' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    put:
+      tags: [columns]
+      summary: 컬럼 수정
+      operationId: updateColumn
+      description: 전달된 필드만 업데이트됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ColumnUpdateRequest' }
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Column' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    delete:
+      tags: [columns]
+      summary: 컬럼 삭제
+      operationId: deleteColumn
+      description: |
+        컬럼을 삭제합니다.
+        - 소속된 모든 카드가 CASCADE로 함께 삭제됩니다.
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:      { type: boolean, example: true }
+                  message: { type: string, example: "컬럼이 삭제되었습니다" }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  # ── Cards ────────────────────────────────────────────────
+  /api/columns/{columnId}/cards:
+    parameters:
+      - $ref: '#/components/parameters/columnIdParam'
+
+    get:
+      tags: [cards]
+      summary: 컬럼의 카드 목록 조회
+      operationId: listCardsByColumn
+      description: 컬럼에 속한 카드를 `position` 오름차순으로 반환합니다.
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [cards]
+      summary: 카드 생성
+      operationId: createCard
+      description: |
+        컬럼에 새 카드를 추가합니다.
+        - `board_id`는 컬럼의 정보에서 자동으로 추출됩니다.
+        - `assignee_id` 전달 시 해당 사용자가 존재하는지 검증합니다.
+        - `position` 미지정 시 마지막 순서가 자동 부여됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CardCreateRequest' }
+            example:
+              title: "로그인 페이지 구현"
+              description: "OAuth2 + JWT 기반"
+              priority: "high"
+              due_date: "2024-12-31"
+              labels: ["frontend", "auth"]
+      responses:
+        "201":
+          description: 카드 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404":
+          description: 컬럼 또는 담당자를 찾을 수 없음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/columns/{columnId}/cards/reorder:
+    parameters:
+      - $ref: '#/components/parameters/columnIdParam'
+
+    put:
+      tags: [cards]
+      summary: 카드 순서 일괄 변경 (Drag & Drop)
+      operationId: reorderCards
+      description: |
+        컬럼 내 카드 순서를 일괄 변경합니다.
+        - `column_id`를 포함하면 컬럼 간 이동도 가능합니다.
+        - 트랜잭션으로 처리됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orders]
+              properties:
+                orders:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [id, position]
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      position:
+                        type: integer
+                        minimum: 0
+                      column_id:
+                        type: string
+                        format: uuid
+                        description: "컬럼 이동 시 대상 column_id"
+      responses:
+        "200":
+          description: 순서 변경 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/boards/{boardId}/cards:
+    parameters:
+      - $ref: '#/components/parameters/boardIdParam'
+
+    get:
+      tags: [cards]
+      summary: 보드의 전체 카드 조회
+      operationId: listCardsByBoard
+      description: 보드에 속한 모든 카드를 `column_id, position` 순으로 반환합니다.
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/cards/{id}:
+    parameters:
+      - $ref: '#/components/parameters/idParam'
+
+    get:
+      tags: [cards]
+      summary: 카드 단건 조회
+      operationId: getCardById
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    put:
+      tags: [cards]
+      summary: 카드 수정
+      operationId: updateCard
+      description: |
+        전달된 필드만 업데이트됩니다.
+        - `column_id` 변경 시 대상 컬럼 존재를 검증합니다.
+        - `assignee_id` 변경 시 담당자 사용자 존재를 검증합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CardUpdateRequest' }
+      responses:
+        "200":
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404":
+          description: 카드, 컬럼 또는 담당자를 찾을 수 없음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+    delete:
+      tags: [cards]
+      summary: 카드 삭제
+      operationId: deleteCard
+      responses:
+        "200":
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:      { type: boolean, example: true }
+                  message: { type: string, example: "카드가 삭제되었습니다" }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/cards/{id}/move:
+    parameters:
+      - $ref: '#/components/parameters/idParam'
+
+    put:
+      tags: [cards]
+      summary: 카드 컬럼 간 이동
+      operationId: moveCard
+      description: |
+        카드를 다른 컬럼으로 이동합니다.
+        - 같은 컬럼 내 순서 변경에도 사용 가능합니다.
+        - 대상 컬럼의 존재를 검증합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CardMoveRequest' }
+            example:
+              column_id: "c0l00000-0000-0000-0000-000000000002"
+              position: 0
+      responses:
+        "200":
+          description: 이동 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/Card' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404":
+          description: 카드 또는 대상 컬럼을 찾을 수 없음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        "500": { $ref: '#/components/responses/ServerError' }
