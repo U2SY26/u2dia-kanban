@@ -1,0 +1,71 @@
+# ─── Database / State ─────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# ─── Secrets / Credentials ────────────────────────
+.env
+.env.*
+*.env
+secrets/
+credentials/
+*service-account*.json
+*-credentials.json
+*.pem
+*.key
+*.p12
+*.keystore
+fastlane/Appfile
+android/fastlane/Appfile
+flutter_app/android/fastlane/Appfile
+
+# ─── Tokens / API keys (CSV) ──────────────────────
+claude_api_tokens_*.csv
+api_tokens_*.csv
+*_tokens.csv
+
+# ─── Claude Code session state ────────────────────
+.claude/.active_ticket
+.claude/settings.local.json
+.claude/projects/
+.claude/worktrees/
+.claude/CLAUDE.local.md
+
+# ─── Build artifacts ──────────────────────────────
+build/
+dist/
+out/
+release/
+*.aab
+*.apk
+*.ipa
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.gradle/
+flutter_app/android/local.properties
+ios/Pods/
+ios/Runner.xcworkspace/
+
+# ─── Logs / Cache ─────────────────────────────────
+*.log
+*.tmp
+.cache/
+.idea/
+.vscode/
+*.swp
+
+# ─── Play Store assets (개발자별 생성) ────────────
+play-assets/screenshots-*/
+
+# ─── OS ───────────────────────────────────────────
+.DS_Store
+Thumbs.db

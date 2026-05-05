@@ -1,0 +1,732 @@
+{
+  "$schema": "skill-rules/v1",
+  "description": "스킬 자동 활성화 트리거 규칙 — e-Commerce AI Platform",
+  "rules": [
+    {
+      "skill": "ecommerce-api",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "쿠팡",
+          "네이버",
+          "11번가",
+          "아마존",
+          "쇼피파이",
+          "Shopify",
+          "Amazon",
+          "Shopee",
+          "마켓플레이스",
+          "API 연동",
+          "WING",
+          "스마트스토어",
+          "eBay",
+          "Lazada",
+          "AliExpress"
+        ]
+      }
+    },
+    {
+      "skill": "market-analysis",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "시장 분석",
+          "트렌드",
+          "인기 상품",
+          "판매 예측",
+          "경쟁 분석",
+          "카테고리 분석",
+          "키워드 분석",
+          "랭킹",
+          "매출 추이",
+          "수요 예측"
+        ]
+      }
+    },
+    {
+      "skill": "inventory-management",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "재고",
+          "입출고",
+          "발주",
+          "SKU",
+          "창고",
+          "안전재고",
+          "재고 동기화",
+          "피킹",
+          "패킹",
+          "바코드"
+        ]
+      }
+    },
+    {
+      "skill": "telegram-bot",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "텔레그램",
+          "봇",
+          "채팅 위젯",
+          "U2DIA AI",
+          "remote-control",
+          "실시간 소통"
+        ]
+      }
+    },
+    {
+      "skill": "multi-tenant-db",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "멀티 테넌트",
+          "업체별 DB",
+          "스키마 분리",
+          "테넌트",
+          "PgBouncer",
+          "연결 풀링"
+        ]
+      }
+    },
+    {
+      "skill": "data-visualization",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "차트",
+          "그래프",
+          "대시보드",
+          "시각화",
+          "도표",
+          "Recharts",
+          "D3",
+          "KPI"
+        ]
+      }
+    },
+    {
+      "skill": "notification-system",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "알림",
+          "노티피케이션",
+          "푸시",
+          "이메일 발송",
+          "FCM"
+        ]
+      }
+    },
+    {
+      "skill": "shipping-api",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "배송",
+          "택배",
+          "운송장",
+          "물류",
+          "배송 추적",
+          "CJ대한통운",
+          "한진",
+          "로젠"
+        ]
+      }
+    },
+    {
+      "skill": "payment-integration",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "정산",
+          "매출 조회",
+          "수수료",
+          "정산금"
+        ]
+      }
+    },
+    {
+      "skill": "mermaid",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "다이어그램",
+          "flowchart",
+          "시퀀스",
+          "ERD",
+          "diagram",
+          "mermaid"
+        ]
+      }
+    },
+    {
+      "skill": "pdf",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "PDF",
+          "pdf"
+        ],
+        "file_patterns": [
+          "**/*.pdf"
+        ]
+      }
+    },
+    {
+      "skill": "mcp-builder",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "MCP",
+          "mcp server",
+          "JSON-RPC",
+          "MCP 서버"
+        ]
+      }
+    },
+    {
+      "skill": "docx",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "docx",
+          "Word",
+          "문서 생성",
+          "보고서"
+        ]
+      }
+    },
+    {
+      "skill": "pptx",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "pptx",
+          "PPT",
+          "프레젠테이션",
+          "발표자료",
+          "슬라이드"
+        ]
+      }
+    },
+    {
+      "skill": "xlsx",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "xlsx",
+          "엑셀",
+          "스프레드시트",
+          "CSV",
+          "데이터 분석"
+        ]
+      }
+    },
+    {
+      "skill": "frontend-design",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "UI 디자인",
+          "UX",
+          "랜딩 페이지",
+          "대시보드 디자인",
+          "컴포넌트"
+        ]
+      }
+    },
+    {
+      "skill": "internal-comms",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "상태 보고",
+          "주간 보고",
+          "공지",
+          "변경 안내",
+          "뉴스레터"
+        ]
+      }
+    },
+    {
+      "skill": "skill-developer",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "스킬 생성",
+          "스킬 만들",
+          "create skill",
+          "new skill"
+        ]
+      }
+    },
+    {
+      "skill": "github",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "PR",
+          "Pull Request",
+          "Issue",
+          "GitHub Actions",
+          "CI/CD",
+          "gh pr"
+        ]
+      }
+    },
+    {
+      "skill": "summarize",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "요약",
+          "핵심만",
+          "TL;DR",
+          "정리해"
+        ]
+      }
+    },
+    {
+      "skill": "error-tracking",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "에러 추적",
+          "Sentry",
+          "모니터링",
+          "에러 로깅"
+        ]
+      }
+    },
+    {
+      "skill": "brand-guidelines",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "브랜드",
+          "로고",
+          "컬러 팔레트",
+          "디자인 시스템",
+          "U2DIA"
+        ]
+      }
+    },
+    {
+      "skill": "web-design-guidelines",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "접근성",
+          "WCAG",
+          "UX 리뷰",
+          "웹 표준",
+          "Core Web Vitals"
+        ]
+      }
+    },
+    {
+      "skill": "nextjs-frontend-guidelines",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "Next.js",
+          "App Router",
+          "Server Component",
+          "React 19"
+        ],
+        "file_patterns": [
+          "**/app/**/*.tsx",
+          "**/components/**/*.tsx"
+        ]
+      }
+    },
+    {
+      "skill": "fastapi-backend-guidelines",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "FastAPI",
+          "Python 백엔드",
+          "SQLAlchemy",
+          "Pydantic"
+        ],
+        "file_patterns": [
+          "**/backend/**/*.py"
+        ]
+      }
+    },
+    {
+      "skill": "pytest-backend-testing",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "pytest",
+          "테스트",
+          "유닛 테스트",
+          "통합 테스트",
+          "커버리지"
+        ]
+      }
+    },
+    {
+      "skill": "threads-writer",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "Threads",
+          "SNS",
+          "소셜 미디어",
+          "바이럴"
+        ]
+      }
+    },
+    {
+      "skill": "blogwatcher",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "블로그 모니터링",
+          "뉴스 추적",
+          "키워드 추적"
+        ]
+      }
+    },
+    {
+      "skill": "programmatic-seo",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "SEO",
+          "검색 최적화",
+          "사이트맵",
+          "메타데이터",
+          "구조화 데이터"
+        ]
+      }
+    },
+    {
+      "skill": "copyright-safe-style-transfer",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "이미지 생성",
+          "스타일 변환",
+          "썸네일",
+          "상품 이미지"
+        ]
+      }
+    },
+    {
+      "skill": "remotion-best-practices",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "비디오",
+          "프로모 영상",
+          "Remotion",
+          "동영상 생성"
+        ]
+      }
+    },
+    {
+      "skill": "vercel-react-best-practices",
+      "action": "SUGGEST",
+      "priority": "medium",
+      "triggers": {
+        "keywords": [
+          "Vercel",
+          "배포 최적화",
+          "Edge Runtime",
+          "ISR",
+          "성능 최적화"
+        ]
+      }
+    },
+    {
+      "skill": "gemini",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "Gemini",
+          "Google AI",
+          "Gemini API",
+          "gemini-cli"
+        ]
+      }
+    },
+    {
+      "skill": "notion",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "Notion",
+          "노션",
+          "Notion API",
+          "노션 연동"
+        ]
+      }
+    },
+    {
+      "skill": "openai-image-gen",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "DALL-E",
+          "이미지 생성",
+          "GPT Image",
+          "OpenAI Images"
+        ]
+      }
+    },
+    {
+      "skill": "ppt-brand-guidelines",
+      "action": "SUGGEST",
+      "priority": "low",
+      "triggers": {
+        "keywords": [
+          "PPT 브랜드",
+          "발표 디자인",
+          "슬라이드 가이드"
+        ]
+      }
+    },
+    {
+      "skill": "sprint-planner",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "스프린트",
+          "sprint",
+          "플랜",
+          "plan",
+          "워크플로우",
+          "Think Plan Build",
+          "페이즈"
+        ]
+      }
+    },
+    {
+      "skill": "code-review-gate",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "코드 리뷰",
+          "code review",
+          "리뷰 게이트",
+          "pre-merge",
+          "머지 전"
+        ]
+      }
+    },
+    {
+      "skill": "qa-gate",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "QA",
+          "qa",
+          "테스트 게이트",
+          "품질 검사",
+          "헬스 스코어"
+        ]
+      }
+    },
+    {
+      "skill": "security-audit",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "보안 감사",
+          "security audit",
+          "OWASP",
+          "STRIDE",
+          "취약점",
+          "CSO"
+        ]
+      }
+    },
+    {
+      "skill": "sprint-retro",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "회고",
+          "retrospective",
+          "retro",
+          "스프린트 회고",
+          "반성"
+        ]
+      }
+    },
+    {
+      "skill": "cross-model-review",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "크로스 리뷰",
+          "cross review",
+          "다중 모델",
+          "합의",
+          "codex",
+          "멀티 모델"
+        ]
+      }
+    },
+    {
+      "skill": "ship-workflow",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "ship",
+          "배포 워크플로우",
+          "출시",
+          "릴리즈",
+          "deploy workflow"
+        ]
+      }
+    },
+    {
+      "skill": "office-hours",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "office hours",
+          "진단",
+          "방향 수립",
+          "YC",
+          "상담",
+          "문제 진단"
+        ]
+      }
+    },
+    {
+      "skill": "careful-mode",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "careful",
+          "주의",
+          "위험",
+          "destructive",
+          "파괴적"
+        ]
+      }
+    },
+    {
+      "skill": "autoplan",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "autoplan",
+          "자동 계획",
+          "자동 스프린트",
+          "프로젝트 스캔"
+        ]
+      }
+    },
+    {
+      "skill": "legal-compliance",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "법률",
+          "legal",
+          "컴플라이언스",
+          "GDPR",
+          "개인정보",
+          "약관",
+          "terms",
+          "privacy",
+          "라이선스",
+          "license",
+          "보안감사",
+          "소송",
+          "규제"
+        ]
+      }
+    },
+    {
+      "skill": "tax-compliance",
+      "action": "SUGGEST",
+      "priority": "critical",
+      "triggers": {
+        "keywords": [
+          "세금",
+          "tax",
+          "세무",
+          "VAT",
+          "사업자",
+          "세금계산서",
+          "invoice",
+          "부가세",
+          "원천징수",
+          "sales tax"
+        ]
+      }
+    },
+    {
+      "skill": "customer-cs",
+      "action": "SUGGEST",
+      "priority": "high",
+      "triggers": {
+        "keywords": [
+          "CS",
+          "고객",
+          "customer",
+          "support",
+          "채팅",
+          "FAQ",
+          "help desk",
+          "티켓팅",
+          "상담"
+        ]
+      }
+    }
+  ]
+}

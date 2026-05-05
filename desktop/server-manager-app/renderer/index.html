@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U2DIA Server Manager</title>
+<style>
+:root {
+  --bg:#0f1117; --card:#1e2235; --panel:#1a1d2e; --line:#2d3148;
+  --text:#e2e8f0; --muted:#64748b; --brand:#3b82f6; --green:#22c55e;
+  --red:#ef4444; --orange:#f97316; --yellow:#eab308; --cyan:#06b6d4;
+  --font:'Segoe UI','Pretendard',sans-serif; --mono:'Consolas','JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* Header */
+.hdr{height:44px;display:flex;align-items:center;padding:0 16px;background:#12141c;border-bottom:1px solid var(--line);gap:12px;-webkit-app-region:drag}
+.hdr h1{font-size:14px;font-weight:700;color:var(--brand)}
+.hdr .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.hdr .dot.running{background:var(--green);box-shadow:0 0 6px var(--green)}
+.hdr .dot.starting{background:var(--orange);animation:pulse 1s infinite}
+.hdr .dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr .state{font-size:11px;color:var(--muted)}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel)}
+.tab{padding:8px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;-webkit-app-region:no-drag}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:16px}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+
+/* Widgets */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.widget{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center}
+.widget .wv{font-size:22px;font-weight:700}
+.widget .wk{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Meter */
+.meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.meter-fill{height:100%;border-radius:3px;transition:width 0.5s}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+td{padding:6px 8px;border-bottom:1px solid rgba(45,49,72,0.3)}
+tr:hover td{background:rgba(59,130,246,0.05)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;font-size:11px;font-weight:600;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--text);cursor:pointer;-webkit-app-region:no-drag}
+.btn:hover{border-color:var(--brand)}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn-sm{padding:3px 8px;font-size:10px}
+
+/* Input */
+input,select{padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:4px;color:var(--text);font-size:12px}
+input:focus,select:focus{outline:none;border-color:var(--brand)}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+
+/* Log */
+.log-area{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;font-family:var(--mono);font-size:10px;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:var(--muted)}
+.log-area::-webkit-scrollbar{width:3px}
+.log-area::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.section{margin-bottom:20px}
+.section h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+/* Window controls */
+.win-controls{display:flex;align-items:center;gap:2px;-webkit-app-region:no-drag}
+.win-btn{width:36px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;border-radius:4px;transition:background 0.15s,color 0.15s}
+.win-btn:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.win-btn.close:hover{background:var(--red);color:#fff}
+.win-btn svg{width:14px;height:14px;fill:currentColor}
+
+/* Responsive grid */
+@media (max-width:600px) {
+  .grid{grid-template-columns:1fr 1fr!important}
+  .hdr{padding:0 10px;gap:8px}
+  .hdr h1{font-size:12px}
+  .content{padding:10px}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;padding:8px 12px;font-size:11px}
+  table{font-size:11px}
+  td,th{padding:4px 6px}
+}
+@media (min-width:601px) and (max-width:900px) {
+  .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important}
+}
+@media (min-width:901px) {
+  .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important}
+}
+
+/* Fullscreen adjustments */
+.fullscreen .hdr{padding:0 20px}
+.fullscreen .content{padding:24px}
+.fullscreen .widget .wv{font-size:28px}
+.fullscreen .widget{padding:20px}
+.fullscreen .log-area{max-height:400px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <h1>U2DIA Server Manager</h1>
+    <span id="dot" class="dot"></span>
+    <span id="stateLabel" class="state">확인 중...</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-sm" id="btnStart" style="display:none">시작</button>
+    <button class="btn btn-sm" id="btnStop" style="display:none">정지</button>
+    <button class="btn btn-sm" id="btnRestart" style="display:none">재시작</button>
+    <div class="win-controls">
+      <button class="win-btn" id="btnMinimize" title="최소화"><svg viewBox="0 0 16 16"><rect x="2" y="7.5" width="12" height="1"/></svg></button>
+      <button class="win-btn" id="btnMaximize" title="최대화"><svg id="iconMaximize" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="win-btn" id="btnFullscreen" title="전체화면 (F11)"><svg viewBox="0 0 16 16"><path d="M2 2h5v1.5H3.5V6H2V2zm7 0h5v4h-1.5V3.5H9V2zM2 10h1.5v2.5H6V14H2v-4zm12 0v4h-4v-1.5h2.5V10H14z"/></svg></button>
+      <button class="win-btn close" id="btnClose" title="닫기"><svg viewBox="0 0 16 16"><path d="M3.5 3.5l9 9m0-9l-9 9" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="server">서버</div>
+    <div class="tab" data-tab="tokens">토큰</div>
+    <div class="tab" data-tab="clients">클라이언트</div>
+    <div class="tab" data-tab="metrics">메트릭</div>
+    <div class="tab" data-tab="settings">설정</div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const api = window.electronAPI;
+let currentTab = 'server';
+let metricsTimer = null;
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    renderTab();
+  });
+});
+
+// Server controls
+$('btnStart').addEventListener('click', () => api.serverStart());
+$('btnStop').addEventListener('click', () => api.serverStop());
+$('btnRestart').addEventListener('click', () => api.serverRestart());
+
+// Server state updates
+let serverLogs = '';
+api.onServerStateChanged((state) => updateServerState(state));
+api.onServerLog((text) => {
+  serverLogs += text;
+  if (serverLogs.length > 50000) serverLogs = serverLogs.slice(-30000);
+  const logEl = document.getElementById('serverLog');
+  if (logEl) { logEl.textContent = serverLogs; logEl.scrollTop = logEl.scrollHeight; }
+});
+
+function updateServerState(state) {
+  $('dot').className = 'dot ' + state;
+  const labels = { stopped:'정지됨', starting:'시작 중...', running:'실행 중', error:'오류' };
+  $('stateLabel').textContent = labels[state] || state;
+  $('btnStart').style.display = (state === 'stopped' || state === 'error') ? '' : 'none';
+  $('btnStop').style.display = state === 'running' ? '' : 'none';
+  $('btnRestart').style.display = state === 'running' ? '' : 'none';
+}
+
+// Tab renderers
+async function renderTab() {
+  if (metricsTimer) { clearInterval(metricsTimer); metricsTimer = null; }
+  const c = $('content');
+  switch (currentTab) {
+    case 'server': await renderServer(c); break;
+    case 'tokens': await renderTokens(c); break;
+    case 'clients': await renderClients(c); break;
+    case 'metrics': await renderMetrics(c); break;
+    case 'settings': await renderSettings(c); break;
+  }
+}
+
+async function renderServer(c) {
+  const status = await api.serverStatus();
+  updateServerState(status.state);
+  c.innerHTML = `
+    <div class="grid">
+      <div class="widget"><div class="wv" style="color:${status.state==='running'?'var(--green)':'var(--red)'}">${status.state==='running'?'ON':'OFF'}</div><div class="wk">서버 상태</div></div>
+      <div class="widget"><div class="wv">${status.port||'-'}</div><div class="wk">포트</div></div>
+      <div class="widget"><div class="wv">${status.host||'-'}</div><div class="wk">바인딩 호스트</div></div>
+    </div>
+    <div class="section"><h3>서버 로그</h3><div class="log-area" id="serverLog">${esc(serverLogs)}</div></div>`;
+  const logEl = document.getElementById('serverLog');
+  if (logEl) logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function renderTokens(c) {
+  const res = await api.getTokens();
+  const tokens = res.tokens || [];
+  c.innerHTML = `
+    <div class="section" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">인증 토큰 (${tokens.length}개)</h3>
+      <button class="btn btn-primary btn-sm" onclick="createToken()">+ 새 토큰</button>
+    </div>
+    <table>
+      <tr><th>표시</th><th>이름</th><th>권한</th><th>생성일</th><th>사용</th><th>상태</th><th></th></tr>
+      ${tokens.map(t => `<tr>
+        <td style="font-family:var(--mono)">${esc(t.token_display)}</td>
+        <td>${esc(t.name||'-')}</td>
+        <td>${esc(t.permissions||'agent')}</td>
+        <td style="color:var(--muted)">${t.created_at||'-'}</td>
+        <td>${t.use_count||0}회</td>
+        <td style="color:${t.is_active?'var(--green)':'var(--red)'}">${t.is_active?'활성':'비활성'}</td>
+        <td>${t.is_active?`<button class="btn btn-danger btn-sm" onclick="deleteToken('${t.token_id}')">비활성화</button>`:''}</td>
+      </tr>`).join('')}
+    </table>
+    <div id="newTokenResult" style="margin-top:12px"></div>`;
+}
+
+async function renderClients(c) {
+  const res = await api.getClients();
+  const clients = res.clients || [];
+  c.innerHTML = `
+    <div class="section"><h3>연결된 클라이언트 (${clients.length})</h3></div>
+    <table>
+      <tr><th>IP</th><th>User Agent</th><th>요청수</th><th>최근 접속</th><th>최초 접속</th></tr>
+      ${clients.map(cl => `<tr>
+        <td style="font-family:var(--mono)">${esc(cl.ip)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(cl.user_agent)}">${esc(cl.user_agent||'-')}</td>
+        <td>${cl.requests||0}</td>
+        <td style="color:var(--muted)">${cl.last_seen||'-'}</td>
+        <td style="color:var(--muted)">${cl.first_seen||'-'}</td>
+      </tr>`).join('')}
+    </table>`;
+}
+
+async function renderMetrics(c) {
+  c.innerHTML = '<div id="metricsContent">로딩중...</div>';
+  await refreshMetrics();
+  metricsTimer = setInterval(refreshMetrics, 5000);
+}
+
+async function refreshMetrics() {
+  const res = await api.getMetrics();
+  const el = document.getElementById('metricsContent');
+  if (!el || !res.ok) return;
+  const m = res.metrics || {};
+  const cpu = m.cpu_percent || 0;
+  const mem = m.memory_percent || 0;
+  const disk = m.disk_percent || 0;
+
+  el.innerHTML = `
+    <div class="grid">
+      <div class="widget">
+        <div class="wv" style="color:${cpu>80?'var(--red)':cpu>50?'var(--orange)':'var(--green)'}">${cpu}%</div>
+        <div class="wk">CPU</div>
+        <div class="meter"><div class="meter-fill" style="width:${cpu}%;background:${cpu>80?'var(--red)':cpu>50?'var(--orange)':'var(--green)'}"></div></div>
+      </div>
+      <div class="widget">
+        <div class="wv" style="color:${mem>80?'var(--red)':mem>50?'var(--orange)':'var(--green)'}">${mem}%</div>
+        <div class="wk">메모리 (${fmtBytes(m.memory_used||0)} / ${fmtBytes(m.memory_total||0)})</div>
+        <div class="meter"><div class="meter-fill" style="width:${mem}%;background:${mem>80?'var(--red)':mem>50?'var(--orange)':'var(--green)'}"></div></div>
+      </div>
+      <div class="widget">
+        <div class="wv" style="color:${disk>90?'var(--red)':disk>70?'var(--orange)':'var(--green)'}">${disk}%</div>
+        <div class="wk">디스크 (${fmtBytes(m.disk_used||0)} / ${fmtBytes(m.disk_total||0)})</div>
+        <div class="meter"><div class="meter-fill" style="width:${disk}%;background:${disk>90?'var(--red)':disk>70?'var(--orange)':'var(--green)'}"></div></div>
+      </div>
+      <div class="widget">
+        <div class="wv" style="color:var(--cyan)">${m.platform||'-'}</div>
+        <div class="wk">플랫폼</div>
+      </div>
+    </div>`;
+}
+
+async function renderSettings(c) {
+  const s = await api.getSettings();
+  c.innerHTML = `
+    <div class="section"><h3>서버 설정</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:400px">
+        <div><label>포트</label><input type="number" id="sPort" value="${s.port||5555}" style="width:100%"></div>
+        <div><label>호스트</label><input type="text" id="sHost" value="${s.host||'127.0.0.1'}" style="width:100%"></div>
+        <div><label>Python 경로</label><input type="text" id="sPython" value="${s.pythonPath||'python'}" style="width:100%"></div>
+      </div>
+    </div>
+    <div class="section"><h3>앱 설정</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:400px">
+        <label><input type="checkbox" id="sMinTray" ${s.minimizeToTray?'checked':''}> 닫기 시 트레이로 최소화</label>
+        <label><input type="checkbox" id="sStartWin" ${s.startWithWindows?'checked':''}> Windows 시작 시 자동 실행</label>
+        <label><input type="checkbox" id="sNotif" ${s.notifications?'checked':''}> 알림 활성화</label>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">저장</button>
+    <span id="saveResult" style="margin-left:8px;font-size:11px;color:var(--green)"></span>`;
+}
+
+// Actions
+async function createToken() {
+  const name = prompt('토큰 이름 (선택):');
+  if (name === null) return;
+  const res = await api.createToken({ name: name || 'unnamed' });
+  const el = document.getElementById('newTokenResult');
+  if (res.ok) {
+    el.innerHTML = `<div style="padding:12px;background:var(--card);border:1px solid var(--green);border-radius:6px">
+      <div style="font-size:11px;color:var(--green);margin-bottom:4px">토큰이 생성되었습니다. 이 키는 다시 볼 수 없습니다:</div>
+      <div style="font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:2px;padding:8px;background:var(--bg);border-radius:4px;text-align:center">${esc(res.token_key)}</div>
+    </div>`;
+    renderTokens($('content'));
+  } else {
+    el.innerHTML = `<div style="color:var(--red)">${esc(res.message||'생성 실패')}</div>`;
+  }
+}
+
+async function deleteToken(id) {
+  if (!confirm('이 토큰을 비활성화합니까?')) return;
+  await api.deleteToken(id);
+  renderTokens($('content'));
+}
+
+async function saveSettings() {
+  const s = {
+    port: parseInt($('sPort').value) || 5555,
+    host: $('sHost').value || '127.0.0.1',
+    pythonPath: $('sPython').value || 'python',
+    minimizeToTray: $('sMinTray').checked,
+    startWithWindows: $('sStartWin').checked,
+    notifications: $('sNotif').checked,
+  };
+  await api.setSettings(s);
+  $('saveResult').textContent = '저장 완료';
+  setTimeout(() => { const el = $('saveResult'); if (el) el.textContent = ''; }, 2000);
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s||''); return d.innerHTML; }
+function fmtBytes(b) {
+  if (!b) return '0';
+  if (b >= 1073741824) return (b/1073741824).toFixed(1) + ' GB';
+  if (b >= 1048576) return (b/1048576).toFixed(0) + ' MB';
+  return (b/1024).toFixed(0) + ' KB';
+}
+
+// Window controls
+$('btnMinimize').addEventListener('click', () => api.windowMinimize());
+$('btnMaximize').addEventListener('click', () => api.windowMaximize());
+$('btnFullscreen').addEventListener('click', () => api.windowFullscreen());
+$('btnClose').addEventListener('click', () => window.close());
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F11') { e.preventDefault(); api.windowFullscreen(); }
+});
+
+const iconMaxSvg = '<rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1"/>';
+const iconRestoreSvg = '<rect x="4" y="1" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/><rect x="1" y="4" width="9" height="9" fill="var(--panel)" stroke="currentColor" stroke-width="1"/>';
+
+api.onWindowStateChanged((state) => {
+  const appEl = document.querySelector('.app');
+  if (state === 'fullscreen') {
+    appEl.classList.add('fullscreen');
+    $('btnFullscreen').title = '전체화면 해제 (F11)';
+  } else {
+    appEl.classList.remove('fullscreen');
+    $('btnFullscreen').title = '전체화면 (F11)';
+  }
+  if (state === 'maximized') {
+    $('iconMaximize').innerHTML = iconRestoreSvg;
+    $('btnMaximize').title = '이전 크기로 복원';
+  } else if (state !== 'fullscreen') {
+    $('iconMaximize').innerHTML = iconMaxSvg;
+    $('btnMaximize').title = '최대화';
+  }
+});
+
+// Init
+api.serverStatus().then(s => updateServerState(s.state));
+renderTab();
+</script>
+</body>
+</html>

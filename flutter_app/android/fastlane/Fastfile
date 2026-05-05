@@ -1,0 +1,28 @@
+default_platform(:android)
+
+platform :android do
+  desc "내부테스트 트랙에 AAB 업로드 (앱이 publish 된 후엔 release_status=completed 로 변경)"
+  lane :internal do
+    upload_to_play_store(
+      track: "internal",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+      release_status: "draft"
+    )
+  end
+
+  desc "프로덕션 트랙에 AAB 업로드"
+  lane :production do
+    upload_to_play_store(
+      track: "production",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  end
+end

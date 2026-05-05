@@ -1,0 +1,353 @@
+/* ── Content Area ── */
+.ws-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ws-upper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 0;
+}
+.ws-upper::-webkit-scrollbar { width: 5px; }
+.ws-upper::-webkit-scrollbar-track { background: transparent; }
+.ws-upper::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 3px; }
+
+/* ── CLI Resizer ── */
+.ws-cli-resizer {
+  height: 5px;
+  background: var(--line);
+  cursor: ns-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+}
+.ws-cli-resizer:hover,
+.ws-cli-resizer.dragging { background: var(--brand); }
+.ws-cli-resizer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 2px;
+  background: var(--text-muted);
+  border-radius: 1px;
+  opacity: 0.5;
+}
+
+/* ── CLI Panel ── */
+.ws-cli {
+  height: 240px;
+  min-height: 100px;
+  max-height: 500px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cli-header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-sunken);
+}
+
+.cli-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.cli-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.cli-status-dot.running { background: var(--green); animation: pulse-dot 1s infinite; }
+.cli-status-dot.error   { background: var(--red); }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.cli-ralph-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.cli-ralph-badge.ok    { background: var(--green-bg); color: var(--green); }
+.cli-ralph-badge.warn  { background: var(--yellow-bg); color: var(--yellow); }
+.cli-ralph-badge.block { background: var(--red-bg); color: var(--red); }
+
+/* ── Team List (프로젝트별 팀 선택) ── */
+.cli-team-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elevated);
+  padding: 4px 0;
+}
+.cli-team-list::-webkit-scrollbar { width: 3px; }
+.cli-team-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+.cli-tl-group { margin-bottom: 2px; }
+.cli-tl-proj {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--brand-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cli-tl-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px 3px 20px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+.cli-tl-team:hover { background: var(--bg-hover); color: var(--text); }
+.cli-tl-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cli-tl-pct { font-size: 10px; font-family: var(--mono); font-weight: 700; flex-shrink: 0; }
+.cli-tl-stat { font-size: 9px; color: var(--muted); font-family: var(--mono); flex-shrink: 0; }
+
+/* ── Log Area ── */
+.cli-log-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 11px;
+}
+.cli-log-area::-webkit-scrollbar { width: 3px; }
+.cli-log-area::-webkit-scrollbar-track { background: transparent; }
+.cli-log-area::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+.log-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 2px 12px;
+  border-left: 2px solid transparent;
+  line-height: 1.5;
+}
+.log-line:hover { background: var(--bg-hover-micro); }
+
+.log-ts {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+.log-msg { color: var(--text); word-break: break-word; flex: 1; }
+
+/* 로그 타입별 색상 */
+.log-line.log-user   { border-left-color: var(--brand); }
+.log-line.log-user .log-msg { color: var(--brand); }
+
+.log-line.log-system { border-left-color: var(--purple); }
+.log-line.log-system .log-msg { color: var(--purple); }
+
+.log-line.log-sse    { border-left-color: var(--cyan); }
+.log-line.log-sse .log-msg { color: var(--cyan); }
+
+.log-line.log-success { border-left-color: var(--green); }
+.log-line.log-success .log-msg { color: var(--green); }
+
+.log-line.log-warn   { border-left-color: var(--yellow); }
+.log-line.log-warn .log-msg { color: var(--yellow); }
+
+.log-line.log-error  { border-left-color: var(--red); }
+.log-line.log-error .log-msg { color: var(--red); }
+
+.log-line.log-ralph  { border-left-color: var(--orange); background: var(--orange-bg-faint); }
+.log-line.log-ralph .log-msg { color: var(--orange); font-weight: 600; }
+
+/* ── Input Row ── */
+.cli-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  background: var(--bg-sunken);
+}
+
+/* CLI Select — form-input 토큰 활용 */
+.cli-project-select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  min-width: 130px;
+  max-width: 180px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.cli-project-select:focus { border-color: var(--input-border-focus); box-shadow: var(--input-focus-ring); }
+
+/* CLI Input — form-input 토큰 활용 */
+.cli-input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.cli-input:focus { border-color: var(--input-border-focus); box-shadow: var(--input-focus-ring); }
+.cli-input::placeholder { color: var(--input-placeholder); }
+.cli-input:disabled { background: var(--btn-disabled-bg); color: var(--btn-disabled-text); cursor: not-allowed; }
+
+/* CLI Send Button — btn-primary 토큰 활용 */
+.cli-send-btn {
+  background: var(--btn-primary-bg);
+  border: none;
+  color: var(--btn-primary-text);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease);
+}
+.cli-send-btn:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
+.cli-send-btn:focus-visible { outline: none; box-shadow: var(--btn-focus-ring); }
+.cli-send-btn:disabled { background: var(--btn-disabled-bg); color: var(--btn-disabled-text); cursor: not-allowed; }
+
+/* ── 팀 진행 배너 (칸반보드 상단) ── */
+.team-progress-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.banner-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.banner-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 400px;
+}
+.banner-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.banner-pct {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 44px;
+  text-align: right;
+}
+.banner-tickets {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.banner-ralph {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ── Ralph 카드 배지 ── */
+.ralph-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.ralph-badge.r1    { background: var(--yellow-tint); color: var(--yellow); }
+.ralph-badge.r2    { background: var(--orange-tint); color: var(--orange); }
+.ralph-badge.r-max { background: var(--red-tint);    color: var(--red);    }
+
+/* Remote CLI Mirror — /cli 라우트 뷰 (CLI-3) */
+.cli-mirror{display:flex;flex-direction:column;height:100%;background:#0b0f17;color:#cbd5e1;border-radius:8px;overflow:hidden}
+.cli-mirror__bar{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#0f172a;border-bottom:1px solid #1e293b;flex-wrap:wrap}
+.cli-mirror__title{font-weight:600;color:#e2e8f0;letter-spacing:.02em}
+.cli-mirror__sep{flex:1}
+.cli-mirror__btn{background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:.3rem .65rem;border-radius:6px;font-size:.85rem;cursor:pointer;transition:background .15s}
+.cli-mirror__btn:hover{background:#334155}
+.cli-mirror__hint{color:#64748b;font-size:.8rem;margin-left:.75rem}
+.cli-mirror__hint code{background:#1e293b;padding:.1rem .35rem;border-radius:4px;color:#7dd3fc}
+.cli-mirror__frame-wrap{flex:1;display:flex;min-height:480px}
+.cli-mirror__frame{flex:1;width:100%;height:100%;border:0;background:#000}
+.cli-mirror:fullscreen{border-radius:0}
+.cli-mirror:fullscreen .cli-mirror__frame-wrap{min-height:100vh}
+
+
+/* KPI-3 — Home KPI 등급 분포 + Top3 위젯 */
+.home-grade-row{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.6rem;color:#94a3b8;font-size:.8rem;align-items:center}
+.home-grade{display:inline-flex;align-items:center;gap:.2rem;padding:.15rem .5rem;border-radius:999px;font-weight:600;font-size:.78rem;border:1px solid transparent}
+.home-grade--s{background:rgba(125,211,252,.12);color:#7dd3fc;border-color:rgba(125,211,252,.3)}
+.home-grade--a{background:rgba(134,239,172,.12);color:#86efac;border-color:rgba(134,239,172,.3)}
+.home-grade--b{background:rgba(253,224,71,.10);color:#fde047;border-color:rgba(253,224,71,.3)}
+.home-grade--c{background:rgba(251,113,133,.10);color:#fda4af;border-color:rgba(251,113,133,.3)}
+.home-top-agents{margin-top:.65rem;border-top:1px solid #1e293b;padding-top:.6rem}
+.home-top-agents__title{font-size:.75rem;color:#64748b;margin-bottom:.3rem;letter-spacing:.04em;text-transform:uppercase}
+.home-top-agent{display:flex;align-items:center;gap:.5rem;padding:.25rem 0;font-size:.82rem}
+.home-top-agent__grade{display:inline-block;width:18px;text-align:center;color:#7dd3fc;font-weight:700}
+.home-top-agent__name{flex:1;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-top-agent__meta{color:#64748b;font-size:.75rem}
+.home-top-agent--empty{color:#64748b;font-style:italic}
+
+.cli-mirror__native{flex:1;width:100%;height:100%;background:#000;padding:.4rem}
+
+/* 위험 신호 인디케이터 (FOLLOW-UP) */
+.home-top-agent--danger{border-left:2px solid #fb7185;padding-left:.45rem;background:rgba(251,113,133,.04)}
+.home-top-agent__flags{display:inline-flex;gap:.25rem;margin-left:.4rem}
+.home-flag{display:inline-block;padding:.05rem .35rem;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:.04em}
+.home-flag--qa{background:rgba(251,113,133,.18);color:#fda4af}
+.home-flag--rework{background:rgba(253,224,71,.18);color:#fde047}
+.home-flag--noprogress{background:rgba(125,211,252,.18);color:#7dd3fc}

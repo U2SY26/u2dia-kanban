@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  kanban:
+    build: .
+    container_name: u2dia-kanban
+    ports:
+      - "5555:5555"
+    volumes:
+      - kanban-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  kanban-data:
