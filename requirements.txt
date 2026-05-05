@@ -1,0 +1,6 @@
+# Server (server.py) — 외부 패키지 없음 (Python 표준 라이브러리만)
+
+# System Tray (tray.py) — 아래 3개만 필요
+pystray>=0.19
+Pillow>=9.0
+plyer>=2.1

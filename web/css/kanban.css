@@ -1,0 +1,358 @@
+/* U2DIA AI SERVER AGENT — Kanban Board Styles */
+
+/* ── Enhanced Kanban Columns ── */
+.kb-col {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+/* ── 상태별 컬럼 배경색 (디자인 토큰 기반) ── */
+.kb-col[data-status="Backlog"] {
+  background: var(--col-backlog-bg);
+  border-color: var(--col-backlog-border);
+}
+
+.kb-col[data-status="ToDo"] {
+  background: var(--col-todo-bg);
+  border-color: var(--col-todo-border);
+}
+
+.kb-col[data-status="InProgress"] {
+  background: var(--col-inprogress-bg);
+  border-color: var(--col-inprogress-border);
+}
+
+.kb-col[data-status="Review"] {
+  background: var(--col-review-bg);
+  border-color: var(--col-review-border);
+}
+
+.kb-col[data-status="Done"] {
+  background: var(--col-done-bg);
+  border-color: var(--col-done-border);
+}
+
+.kb-col[data-status="Blocked"] {
+  background: var(--col-blocked-bg);
+  border-color: var(--col-blocked-border);
+}
+
+/* ── 상태별 컬럼 헤더 색상 ── */
+.kb-col-header {
+  padding: 10px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--color-border);
+  user-select: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* 상태별 헤더 배경색 (약간 더 진한 톤) */
+.kb-col[data-status="Backlog"] .kb-col-header {
+  background: var(--col-backlog-header-bg);
+  border-bottom-color: var(--col-backlog);
+  color: var(--col-backlog);
+}
+
+.kb-col[data-status="ToDo"] .kb-col-header {
+  background: var(--col-todo-header-bg);
+  border-bottom-color: var(--col-todo);
+  color: var(--col-todo);
+}
+
+.kb-col[data-status="InProgress"] .kb-col-header {
+  background: var(--col-inprogress-header-bg);
+  border-bottom-color: var(--col-inprogress);
+  color: var(--col-inprogress);
+}
+
+.kb-col[data-status="Review"] .kb-col-header {
+  background: var(--col-review-header-bg);
+  border-bottom-color: var(--col-review);
+  color: var(--col-review);
+}
+
+.kb-col[data-status="Done"] .kb-col-header {
+  background: var(--col-done-header-bg);
+  border-bottom-color: var(--col-done);
+  color: var(--col-done);
+}
+
+.kb-col[data-status="Blocked"] .kb-col-header {
+  background: var(--col-blocked-header-bg);
+  border-bottom-color: var(--col-blocked);
+  color: var(--col-blocked);
+}
+
+.kb-col-count {
+  background: var(--border-glass);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 20px;
+  text-align: center;
+}
+
+/* 상태별 카운트 배지 색상 조정 */
+.kb-col[data-status="Backlog"] .kb-col-count {
+  background: var(--col-backlog-count-bg);
+  color: var(--col-backlog);
+}
+
+.kb-col[data-status="ToDo"] .kb-col-count {
+  background: var(--col-todo-count-bg);
+  color: var(--col-todo);
+}
+
+.kb-col[data-status="InProgress"] .kb-col-count {
+  background: var(--col-inprogress-count-bg);
+  color: var(--col-inprogress);
+}
+
+.kb-col[data-status="Review"] .kb-col-count {
+  background: var(--col-review-count-bg);
+  color: var(--col-review);
+}
+
+.kb-col[data-status="Done"] .kb-col-count {
+  background: var(--col-done-count-bg);
+  color: var(--col-done);
+}
+
+.kb-col[data-status="Blocked"] .kb-col-count {
+  background: var(--col-blocked-count-bg);
+  color: var(--col-blocked);
+}
+
+.kb-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 80px;
+}
+
+.kb-col-body::-webkit-scrollbar { width: 3px; }
+.kb-col-body::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+/* Drop target */
+.kb-col.drop-target {
+  background: var(--brand-bg);
+  border-color: var(--brand);
+}
+.kb-col.drop-target .kb-col-header {
+  background: var(--brand-bg);
+}
+
+/* ── Ticket Cards ── */
+.kb-card {
+  background: var(--kb-card-bg);
+  border: 1px solid var(--kb-card-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  position: relative;
+  box-shadow: var(--kb-card-shadow);
+}
+
+.kb-card:hover {
+  border-color: var(--kb-card-border-hover);
+  box-shadow: var(--kb-card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.kb-card:active:not(.dragging) {
+  border-color: var(--kb-card-border-active);
+  box-shadow: none;
+  transform: translateY(0);
+}
+
+.kb-card.dragging {
+  opacity: 0.4;
+  transform: rotate(2deg) scale(0.98);
+}
+
+/* Priority left-border accent */
+.kb-card[data-priority="Critical"] { border-left: 3px solid var(--pri-critical-color); }
+.kb-card[data-priority="High"]     { border-left: 3px solid var(--pri-high-color); }
+.kb-card[data-priority="Medium"]   { border-left: 3px solid var(--pri-medium-color); }
+.kb-card[data-priority="Low"]      { border-left: 3px solid var(--pri-low-color); }
+
+.kb-card-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.kb-card-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.kb-card-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--cyan);
+}
+
+.kb-card-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyan-bg);
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kb-card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.kb-card-tag {
+  font-size: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--tag-bg);
+  color: var(--tag-color);
+  border: 1px solid var(--tag-border);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.kb-card-tag:hover {
+  background: var(--tag-bg-hover);
+  border-color: var(--tag-border-hover);
+}
+
+.kb-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* ── Card Animations ── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cardMove {
+  0%   { opacity: 0.5; transform: scale(0.92); box-shadow: 0 0 0 2px var(--brand); }
+  50%  { opacity: 0.85; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); box-shadow: none; }
+}
+
+.kb-card-enter {
+  animation: cardEnter var(--anim-card-enter) var(--ease);
+}
+
+.kb-card-moved {
+  animation: cardMove var(--anim-card-move) var(--ease);
+}
+
+/* ── Completion Banner ── */
+@keyframes celebrate {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.kb-complete-banner {
+  background: linear-gradient(135deg, var(--green-bg), var(--brand-bg));
+  border: 2px solid var(--green);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  text-align: center;
+  animation: celebrate 0.5s var(--ease);
+  margin: 12px 8px;
+}
+
+.kb-complete-banner h3 {
+  font-size: var(--fs-xl);
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.kb-complete-banner p {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  margin-bottom: 12px;
+}
+
+/* ── Empty Column ── */
+.kb-col-empty {
+  text-align: center;
+  padding: 20px 8px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  opacity: 0.6;
+}
+
+/* ── 실시간 진행상황 (Live Progress) ── */
+.kb-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: var(--brand-bg);
+  border-radius: 4px;
+  margin: 4px 0;
+  border-left: 2px solid var(--brand);
+  min-height: 22px;
+}
+.kb-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green, #4BCA81);
+  flex-shrink: 0;
+  animation: live-pulse 1.2s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.7); }
+}
+.kb-progress-text {
+  font-size: 10px;
+  color: var(--text-secondary, #9ba5b4);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.kb-card-live {
+  border-color: var(--brand, #1B96FF) !important;
+  box-shadow: var(--shadow-brand-glow), var(--shadow-sm) !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}

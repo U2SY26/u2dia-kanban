@@ -1,0 +1,468 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'demo_data.dart';
+
+class ApiService extends ChangeNotifier {
+  String _baseUrl = 'http://localhost:5555';
+  String? _authToken;
+  bool _connected = false;
+  bool _demoMode = false;
+
+  bool get connected => _connected || _demoMode;
+  bool get demoMode => _demoMode;
+  String get baseUrl => _baseUrl;
+  String? get token => _authToken;
+
+  void setDemoMode(bool enabled) {
+    _demoMode = enabled;
+    if (enabled) {
+      _connected = true;
+    }
+    notifyListeners();
+  }
+
+  void configure(String baseUrl, {String? token}) {
+    _baseUrl = baseUrl.replaceAll(RegExp(r'/$'), '');
+    _authToken = token;
+  }
+
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store',
+    'Pragma': 'no-cache',
+    if (_authToken != null) 'Authorization': 'Bearer $_authToken',
+  };
+
+  /// 데모 모드 mock 응답 라우터. 알려진 패턴은 정적 데이터 반환.
+  Map<String, dynamic>? _demoMockResponse(String path) {
+    if (!_demoMode) return null;
+    final p = path.split('?').first;
+    if (p == '/api/teams') return DemoData.teamsResponse();
+    if (p == '/api/overview') return DemoData.overviewResponse();
+    if (p == '/api/activity') return DemoData.activityResponse();
+    if (p == '/api/cli/tmux/sessions') return DemoData.tmuxSessions();
+    if (p.startsWith('/api/cli/tmux/windows')) {
+      return DemoData.tmuxWindows('demo');
+    }
+    if (p == '/api/vscode/sessions') return DemoData.vscodeSessions();
+    if (p == '/api/vscode/recent') return DemoData.vscodeRecent();
+    final boardMatch = RegExp(r'^/api/teams/([^/]+)/board$').firstMatch(p);
+    if (boardMatch != null) return DemoData.boardResponse(boardMatch.group(1)!);
+    final statsMatch = RegExp(r'^/api/teams/([^/]+)/stats$').firstMatch(p);
+    if (statsMatch != null) return DemoData.statsResponse(statsMatch.group(1)!);
+    final sprintMatch = RegExp(r'^/api/teams/([^/]+)/sprints$').firstMatch(p);
+    if (sprintMatch != null) return DemoData.sprintsResponse(sprintMatch.group(1)!);
+    if (p == '/api/cli/history' || p.startsWith('/api/cli/jobs')) {
+      return {'ok': true, 'history': [], 'jobs': []};
+    }
+    return DemoData.okEmpty();
+  }
+
+  Future<Map<String, dynamic>> get(String path) async {
+    final mock = _demoMockResponse(path);
+    if (mock != null) return mock;
+    try {
+      final sep = path.contains('?') ? '&' : '?';
+      final url = '$_baseUrl$path${sep}_t=${DateTime.now().millisecondsSinceEpoch}';
+      final res = await http.get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      _connected = res.statusCode < 500;
+      notifyListeners();
+      return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    } catch (e) {
+      _connected = false;
+      return {'ok': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
+    if (_demoMode) return DemoData.okSimple();
+    try {
+      final timeout = path.contains('agent/chat') ? 120 : 15;
+      final res = await http.post(Uri.parse('$_baseUrl$path'),
+          headers: _headers, body: jsonEncode(body))
+          .timeout(Duration(seconds: timeout));
+      return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    } catch (e) {
+      return {'ok': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
+    if (_demoMode) return DemoData.okSimple();
+    try {
+      final res = await http.put(Uri.parse('$_baseUrl$path'),
+          headers: _headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
+      return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    } catch (e) {
+      return {'ok': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> delete(String path) async {
+    if (_demoMode) return DemoData.okSimple();
+    try {
+      final res = await http.delete(Uri.parse('$_baseUrl$path'), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    } catch (e) {
+      return {'ok': false, 'error': e.toString()};
+    }
+  }
+
+  // ── Teams ──
+  Future<List<Map<String, dynamic>>> getTeams({String? status}) async {
+    final res = await get('/api/teams${status != null ? '?status=$status' : ''}');
+    return ((res['teams'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Board ──
+  Future<Map<String, dynamic>> getBoard(String teamId) async => get('/api/teams/$teamId/board');
+  Future<Map<String, dynamic>> getStats(String teamId) async => get('/api/teams/$teamId/stats');
+
+  // ── Overview ──
+  Future<Map<String, dynamic>> getOverview() async => get('/api/supervisor/overview');
+
+  // ── Projects ──
+  Future<List<Map<String, dynamic>>> getProjects() async {
+    final res = await get('/api/github/projects');
+    return ((res['projects'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Archives ──
+  Future<List<Map<String, dynamic>>> getArchives() async {
+    final res = await get('/api/archives');
+    return ((res['archives'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<Map<String, dynamic>> archiveDetail(String teamId) => get('/api/archives/$teamId');
+
+  // ── Messages ──
+  Future<List<Map<String, dynamic>>> getMessages(String teamId) async {
+    final res = await get('/api/teams/$teamId/messages');
+    return ((res['messages'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<Map<String, dynamic>> sendMessage(String teamId, String content, {String sender = '유디(앱)'}) =>
+      post('/api/teams/$teamId/messages', {'content': content, 'sender': sender, 'role': 'orchestrator'});
+
+  // ── Tickets ──
+  // ── Ticket Thread ──
+  Future<List<Map<String, dynamic>>> ticketThread(String ticketId) async {
+    final res = await get('/api/tickets/$ticketId/thread');
+    return ((res['thread'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> updateTicketProgress(String ticketId, String note) =>
+      put('/api/tickets/$ticketId/progress', {'note': note});
+
+  Future<Map<String, dynamic>> createTicket(String teamId, Map<String, dynamic> data) =>
+      post('/api/teams/$teamId/tickets', data);
+  Future<Map<String, dynamic>> updateTicketStatus(String ticketId, String status) =>
+      put('/api/tickets/$ticketId/status', {'status': status});
+  Future<Map<String, dynamic>> claimTicket(String ticketId, String agentId) =>
+      post('/api/tickets/$ticketId/claim', {'agent_id': agentId, 'agent_role': 'user'});
+
+  // ── System ──
+  Future<Map<String, dynamic>> getMetrics() async => get('/api/system/metrics');
+  Future<List<Map<String, dynamic>>> getClients() async {
+    final res = await get('/api/system/clients');
+    return ((res['clients'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<List<Map<String, dynamic>>> getTokens() async {
+    final res = await get('/api/tokens');
+    return ((res['tokens'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<List<Map<String, dynamic>>> getProcesses() async {
+    final res = await get('/api/system/processes');
+    return ((res['processes'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Resident Agent (유디) ──
+  Future<Map<String, dynamic>> residentHistory({int limit = 200, String type = 'all'}) =>
+      get('/api/resident/history?limit=$limit&type=$type');
+  Future<Map<String, dynamic>> residentKpi() => get('/api/resident/kpi');
+  Future<Map<String, dynamic>> agentsKpi({String? teamId}) =>
+      get('/api/agents/kpi${teamId != null ? '?team_id=$teamId' : ''}');
+
+  // ── Activity ──
+  Future<List<Map<String, dynamic>>> getActivity({int limit = 50}) async {
+    final res = await get('/api/activity?limit=$limit');
+    return ((res['logs'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Competitions ──
+  Future<Map<String, dynamic>> competitionSummary() => get('/api/competitions/summary');
+  Future<Map<String, dynamic>> competitionHistory(String name, {int limit = 200}) =>
+      get('/api/competitions/history?competition=${Uri.encodeComponent(name)}&limit=$limit');
+  Future<Map<String, dynamic>> competitionTimeline(String name, {int days = 30}) =>
+      get('/api/competitions/${Uri.encodeComponent(name)}/timeline?days=$days');
+  Future<Map<String, dynamic>> lambdaRunning() => get('/api/competitions/lambda-running');
+  Future<Map<String, dynamic>> lambdaCosts({String? month}) =>
+      get('/api/competitions/lambda-costs${month != null ? '?month=$month' : ''}');
+
+  // ── Artifacts ──
+  Future<List<Map<String, dynamic>>> getArtifacts(String teamId) async {
+    final res = await get('/api/teams/$teamId/artifacts');
+    return ((res['artifacts'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Teams with stats (병렬 조회) ──
+  Future<List<Map<String, dynamic>>> getTeamsWithStats({String? status}) async {
+    final teams = await getTeams(status: status);
+    if (teams.isEmpty) return [];
+    final statsResults = await Future.wait(
+      teams.map((t) => getStats(t['team_id'] as String)),
+    );
+    final result = <Map<String, dynamic>>[];
+    for (int i = 0; i < teams.length; i++) {
+      final team = Map<String, dynamic>.from(teams[i]);
+      final s = (statsResults[i]['stats'] as Map?) ?? {};
+      final total = (s['total_tickets'] as num?)?.toInt() ?? 0;
+      final sc = (s['status_counts'] as Map?) ?? {};
+      final done = (sc['Done'] as num?)?.toInt() ?? 0;
+      team['total_tickets'] = total;
+      team['done_tickets'] = done;
+      team['in_progress'] = (sc['InProgress'] as num?)?.toInt() ?? 0;
+      team['progress'] = total > 0 ? (done / total * 100) : 0.0;
+      team['completion_rate'] = (s['completion_rate'] as num?)?.toDouble() ?? 0.0;
+      result.add(team);
+    }
+    return result;
+  }
+
+  // ── Teams management ──
+  Future<Map<String, dynamic>> createTeam(Map<String, dynamic> data) => post('/api/teams', data);
+  Future<Map<String, dynamic>> archiveTeam(String teamId) => post('/api/teams/$teamId/archive', {});
+
+  // ── Telegram ──
+  Future<Map<String, dynamic>> sendTelegram(String msg) =>
+      post('/api/telegram/send', {'message': msg});
+
+  // ── MCP / Orchestrator ──
+  Future<Map<String, dynamic>> triggerOrchestrator(String teamId) =>
+      post('/api/teams/$teamId/orchestrate', {});
+
+  // ── Dashboard data ──
+  Future<Map<String, dynamic>> globalStats() => get('/api/supervisor/stats');
+  Future<Map<String, dynamic>> heatmap() => get('/api/supervisor/heatmap?mode=10min');
+  Future<Map<String, dynamic>> timeline() => get('/api/supervisor/timeline?hours=24');
+  Future<Map<String, dynamic>> usageGlobal() => get('/api/usage/global');
+  Future<Map<String, dynamic>> systemMetrics() => get('/api/system/metrics');
+  Future<Map<String, dynamic>> globalActivity({int limit = 80}) => get('/api/supervisor/activity?limit=$limit');
+
+  // ── Project Visibility Settings ──
+  Future<Map<String, dynamic>> getVisibleProjects() => get('/api/settings/visible-projects');
+  Future<Map<String, dynamic>> setVisibleProjects(List<String> projects) =>
+      put('/api/settings/visible-projects', {'projects': projects});
+
+  // ── Project Architecture & Inventory ──
+  Future<Map<String, dynamic>> projectArchitecture() => get('/api/projects/architecture');
+  Future<Map<String, dynamic>> projectInventory() => get('/api/projects/inventory');
+
+  // ── Sprint ──
+  Future<Map<String, dynamic>> sprintGlobalStats() => get('/api/sprints/global/stats');
+  Future<List<Map<String, dynamic>>> sprintList(String teamId) async {
+    final res = await get('/api/teams/$teamId/sprints');
+    return ((res['sprints'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<Map<String, dynamic>> sprintVelocity(String teamId) => get('/api/teams/$teamId/velocity');
+
+  // ── Project Goals ──
+  Future<Map<String, dynamic>> projectGoals() => get('/api/projects/goals');
+
+  // ── Team History ──
+  Future<Map<String, dynamic>> teamHistory(String teamId, {int limit = 100}) =>
+      get('/api/teams/$teamId/history?limit=$limit');
+
+  // ── Project Goal Registration ──
+  Future<Map<String, dynamic>> registerProjectGoal(String project, String goal, List<Map<String, dynamic>> milestones) =>
+      post('/api/projects/goals/register', {'project': project, 'goal': goal, 'milestones': milestones});
+
+  Future<Map<String, dynamic>> getProjectGoal(String project) =>
+      get('/api/projects/$project/goals');
+
+  // ── Sprint Detail ──
+  Future<Map<String, dynamic>> sprintDetail(String sprintId) => get('/api/sprints/$sprintId');
+  Future<Map<String, dynamic>> sprintBurndown(String sprintId) => get('/api/sprints/$sprintId/burndown');
+  Future<Map<String, dynamic>> sprintRetro(String sprintId) => get('/api/sprints/$sprintId/retro');
+
+  Future<List<Map<String, dynamic>>> chatHistory() async {
+    final res = await get('/api/agent/chat/sessions');
+    return ((res['sessions'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Chat ──
+  Future<Map<String, dynamic>> agentChat(String message, String sessionId, {String? project, bool dispatch = false}) =>
+      post('/api/agent/chat', {
+        'message': message,
+        'session_id': sessionId,
+        if (project != null) 'project': project,
+        if (dispatch) 'dispatch': true,
+      });
+
+  // ── Yudi Quick Actions (앱 supervisor화) ──
+
+  /// 한 줄 설명으로 즉시 티켓 생성. LLM이 title/priority 정제 (실패시 fallback).
+  Future<Map<String, dynamic>> agentQuickTicket(String description, String teamId) =>
+      post('/api/agent/quick-ticket', {'description': description, 'team_id': teamId});
+
+  /// Supervisor 검수 실행. ticketId 또는 teamId 중 하나 + batch.
+  Future<Map<String, dynamic>> supervisorReview({String? ticketId, String? teamId, bool batch = false, int limit = 10}) =>
+      post('/api/supervisor/review', {
+        if (ticketId != null) 'ticket_id': ticketId,
+        if (teamId != null) 'team_id': teamId,
+        'batch': batch,
+        'limit': limit,
+      });
+
+  /// Review 상태에서 supervisor 미검수인 티켓 목록.
+  Future<Map<String, dynamic>> supervisorPending({String? teamId, int limit = 50}) {
+    final q = StringBuffer('?limit=$limit');
+    if (teamId != null && teamId.isNotEmpty) q.write('&team_id=$teamId');
+    return get('/api/supervisor/pending$q');
+  }
+
+  /// 일반 server settings (supervisor_model 외 기타).
+  Future<Map<String, dynamic>> settingsGet() => get('/api/settings');
+  Future<Map<String, dynamic>> settingsPut(Map<String, dynamic> body) => put('/api/settings', body);
+
+  /// 유디 상주 에이전트 상태/제어.
+  Future<Map<String, dynamic>> agentStatus() => get('/api/agent/status');
+  Future<Map<String, dynamic>> agentStop() => post('/api/agent/stop', {});
+  Future<Map<String, dynamic>> agentStart() => post('/api/agent/start', {});
+  Future<Map<String, dynamic>> agentRelay(String message, {String role = 'user'}) =>
+      post('/api/agent/relay', {'message': message, 'role': role});
+  Future<Map<String, dynamic>> agentDispatch(String project, String instruction, {String? projectPath}) =>
+      post('/api/agent/dispatch', {'project': project, 'instruction': instruction, if (projectPath != null) 'project_path': projectPath});
+
+  // ── Notification preferences ──
+  Future<Map<String, dynamic>> getNotifPrefs() => get('/api/settings/notifications');
+  Future<Map<String, dynamic>> setNotifPrefs(Map<String, dynamic> prefs) => post('/api/settings/notifications', prefs);
+
+  // ── CLI Jobs ──
+  Future<List<Map<String, dynamic>>> cliJobs({String? status}) async {
+    final q = status != null ? '?status=$status' : '';
+    final res = await get('/api/cli/jobs$q');
+    return ((res['jobs'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<Map<String, dynamic>> createCliJob(Map<String, dynamic> data) =>
+      post('/api/cli/jobs', data);
+  Future<Map<String, dynamic>> approveCliJob(String jobId) =>
+      put('/api/cli/jobs/$jobId/approve', {});
+  Future<Map<String, dynamic>> cancelCliJob(String jobId) =>
+      put('/api/cli/jobs/$jobId/cancel', {});
+  Future<Map<String, dynamic>> killCliJob(String jobId) =>
+      put('/api/cli/jobs/$jobId/kill', {});
+  Future<Map<String, dynamic>> cliJobLog(String jobId) =>
+      get('/api/cli/jobs/$jobId/log');
+  Future<Map<String, dynamic>> cliJobDiff(String jobId) =>
+      get('/api/cli/jobs/$jobId/diff');
+  Future<Map<String, dynamic>> cliJobFiles(String jobId) =>
+      get('/api/cli/jobs/$jobId/files');
+  Future<Map<String, dynamic>> cliStats() => get('/api/cli/stats');
+
+  // ── Exchange Rate ──
+  Future<Map<String, dynamic>> exchangeRate() => get('/api/exchange-rate');
+
+  // ── Usage History ──
+  Future<Map<String, dynamic>> usageHistory() => get('/api/usage/history');
+
+  // ── Team Specialists ──
+  Future<Map<String, dynamic>> teamSpecialists(String teamId) => get('/api/teams/$teamId/specialists');
+
+  // ── Supervisor Pipeline ──
+  Future<Map<String, dynamic>> supervisorPipeline() => get('/api/supervisor/pipeline');
+  Future<Map<String, dynamic>> supervisorReviewStats() => get('/api/supervisor/review/stats');
+
+  // ── Supervisor Model 설정 ──
+  Future<Map<String, dynamic>> getSupervisorModel() => get('/api/settings/supervisor_model');
+  Future<Map<String, dynamic>> setSupervisorModel(String modelId) =>
+      put('/api/settings/supervisor_model', {'model': modelId});
+  Future<Map<String, dynamic>> supervisorModelHealth(String modelId) =>
+      post('/api/settings/supervisor_model/health', {'model': modelId});
+  Future<List<Map<String, dynamic>>> cliModels() async {
+    final res = await get('/api/cli/models');
+    return ((res['models'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+
+  // ── Competitions ──
+  Future<List<Map<String, dynamic>>> getCompetitions() async {
+    final res = await get('/api/competitions');
+    return ((res['competitions'] as List?) ?? []).cast<Map<String, dynamic>>();
+  }
+  Future<Map<String, dynamic>> competitionShutdown({String target = 'all', String reason = 'manual'}) =>
+      post('/api/competitions/shutdown', {'target': target, 'reason': reason});
+
+  // ── GPU / Resources ──
+  Future<Map<String, dynamic>> getGpuStatus() => get('/api/system/gpu');
+
+  // ── Fleet ──
+  Future<Map<String, dynamic>> fleetStatus() => get('/api/cli/fleet');
+  Future<Map<String, dynamic>> fleetSendMessage({int? pid, String? project, required String message, String type = 'message'}) =>
+      post('/api/cli/fleet/message', {if (pid != null) 'pid': pid, if (project != null) 'project': project, 'message': message, 'type': type});
+  Future<Map<String, dynamic>> fleetMessages({int limit = 50}) => get('/api/cli/fleet/messages?limit=$limit');
+
+  // ── CLI Exec (앱에서 CLI 명령 실행) ──
+  Future<Map<String, dynamic>> cliExec(String command) =>
+      post('/api/cli/exec', {'command': command, 'source': 'app'});
+
+  // ── tmux 세션 관리 ──
+  Future<Map<String, dynamic>> tmuxSessions() => get('/api/cli/tmux/sessions');
+  Future<Map<String, dynamic>> tmuxWindows(String session) => get('/api/cli/tmux/windows?session=${Uri.encodeComponent(session)}');
+  Future<Map<String, dynamic>> tmuxSwitch(String session) => post('/api/cli/tmux/switch', {'session': session});
+
+  // ── VSCode Workspace 매니저 ──
+  Future<List<Map<String, dynamic>>> vscodeSessions() async {
+    try {
+      final res = await get('/api/vscode/sessions');
+      return ((res['sessions'] as List?) ?? []).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  Future<Map<String, dynamic>> vscodeCreateSession(String path, {String? label}) =>
+      post('/api/vscode/sessions', {'path': path, if (label != null) 'label': label});
+
+  Future<Map<String, dynamic>> vscodeDeleteSession(String id) =>
+      delete('/api/vscode/sessions/$id');
+
+  Future<Map<String, dynamic>> vscodeTouchSession(String id) =>
+      put('/api/vscode/sessions/$id/touch', {});
+
+  Future<List<Map<String, dynamic>>> vscodeRecent() async {
+    try {
+      final res = await get('/api/vscode/recent');
+      return ((res['candidates'] as List?) ?? []).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  // ── CLI Exec History (서버 저장 히스토리) ──
+  Future<List<Map<String, dynamic>>> cliExecHistory({int limit = 50}) async {
+    try {
+      final res = await get('/api/cli/history?limit=$limit');
+      return ((res['history'] as List?) ?? []).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  // ── Ping ──
+  Future<bool> ping() async {
+    try {
+      final res = await http.get(Uri.parse('$_baseUrl/api/teams'), headers: _headers)
+          .timeout(const Duration(seconds: 5));
+      _connected = res.statusCode == 200;
+      notifyListeners();
+      return _connected;
+    } catch (_) {
+      _connected = false;
+      notifyListeners();
+      return false;
+    }
+  }
+}

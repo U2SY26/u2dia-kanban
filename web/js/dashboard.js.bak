@@ -1,0 +1,2273 @@
+/* U2DIA AI SERVER AGENT — Dashboard v2 (Heatmap + Area Chart)
+ *
+ * XSS SAFETY: Every dynamic user-supplied string is sanitized through
+ * Utils.esc() before being interpolated into HTML templates.
+ * Utils.esc() converts &, <, >, ", ' into HTML entities using the
+ * browser's native textContent -> innerHTML sanitization.
+ * All innerHTML assignments below ONLY contain:
+ *   1. Static HTML structure (hardcoded strings)
+ *   2. Utils.esc()-sanitized user data
+ *   3. Numeric values (integers, percentages)
+ *   4. CSS variable references (hardcoded)
+ */
+const Dashboard = {
+  _data: null,
+  _stats: null,
+  _prevStats: null,
+  _drillView: 'up',
+  _expandedGroup: null,
+  _viewMode: 'dashboard', /* 'dashboard' | 'kanban' */
+  _selectedProject: null,
+  _selectedTeam: null,
+
+  async render(container) {
+    Charts.cleanup();
+    container.innerHTML = [
+      '<div class="dash-v3" id="dashContent">',
+      /* ── Header ── */
+      '  <div class="dash-header-row">',
+      '    <div style="display:flex;align-items:center;gap:12px">',
+      '      <button class="btn btn-sm btn-primary" onclick="Dashboard.showDashboard()" id="btnDashHome">Dashboard</button>',
+      '      <div style="font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono)" id="dashBreadcrumb">Overview</div>',
+      '    </div>',
+      '    <div class="flex gap-8 items-center">',
+      '      <a href="#/history" class="btn btn-sm">히스토리</a>',
+      '      <a href="#/archives" class="btn btn-sm">아카이브</a>',
+      '      <button class="btn btn-sm" onclick="Dashboard.showSettingsPanel()" title="설정">설정</button>',
+      '      <button class="btn btn-sm btn-danger" onclick="Dashboard.killZombies()" title="좀비 MCP/Node 프로세스 종료">☠ Zombie</button>',
+      '      <button class="btn btn-sm btn-primary" onclick="Dashboard.toggleAgent()" id="btnAgent" title="상주 에이전트">🤖 유디</button>',
+      '      <button class="btn btn-sm" onclick="Dashboard.showResidentHistory()" title="상주 에이전트 히스토리">📋 유디로그</button>',
+      '      <button class="btn btn-sm" onclick="Dashboard.refresh()">새로고침</button>',
+      '    </div>',
+      '  </div>',
+      /* ── 상단 영역: KPI+차트 (기본) / 칸반보드 (팀 클릭 시) ── */
+      '  <div class="dash-upper" id="dashUpper">',
+      '    <div id="dashKpiView">',
+      '      <div class="dash-stat-row" id="dashStats"></div>',
+      '      <div class="dash-charts-row">',
+      '        <div class="dash-chart-panel">',
+      '          <div class="panel-title">Activity Heatmap — 48h (10min)</div>',
+      '          <div id="dashHeatmap"></div>',
+      '        </div>',
+      '        <div class="dash-chart-panel">',
+      '          <div class="panel-title">Ticket Activity — 24h</div>',
+      '          <div class="area-chart-wrap"><canvas id="dashAreaChart"></canvas></div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
+      '    <div id="dashKanbanView" style="display:none"></div>',
+      '  </div>',
+      /* ── 하단: 중앙 메인 + 우측 히스토리 (사이드바는 글로벌 ws-sidebar) ── */
+      '  <div class="dash-lower">',
+      '    <div class="dash-main-panel">',
+      '      <div class="dash-section-header">',
+      '        <h3 id="dashMainTitle">Teams</h3>',
+      '        <div style="display:flex;gap:6px;align-items:center">',
+      '          <button class="btn btn-xs" onclick="Dashboard.quickInstruction()" title="빠른 지시">+ 지시</button>',
+      '          <span class="badge" id="dashTeamCount">0</span>',
+      '        </div>',
+      '      </div>',
+      '      <div class="dash-main-body" id="dashMainBody">',
+      '        <div class="terminal-placeholder">프로젝트를 선택하세요</div>',
+      '      </div>',
+      '    </div>',
+      '    <div class="dash-history-panel">',
+      '      <div class="dash-section-header">',
+      '        <h3>History</h3>',
+      '        <span class="badge" id="dashHistCount">0</span>',
+      '      </div>',
+      '      <div class="dash-history-body" id="dashHistBody">',
+      '        <div class="terminal-placeholder">팀/티켓을 선택하면 히스토리가 표시됩니다</div>',
+      '      </div>',
+      '    </div>',
+      '  </div>',
+      '</div>'
+    ].join('\n');
+    await this.refresh();
+    this._startSSE();
+    /* 10분마다 차트 갱신 */
+    var self = this;
+    if (this._autoRefreshTimer) clearInterval(this._autoRefreshTimer);
+    this._autoRefreshTimer = setInterval(function() { self._quickRefreshStats(); }, 19000);
+    /* 5분마다 차트 전체 갱신 */
+    if (this._chartRefreshTimer) clearInterval(this._chartRefreshTimer);
+    this._chartRefreshTimer = setInterval(function() { self.refresh(); }, 300000);
+    /* 15초마다 비용 카드 갱신 */
+    if (this._usageTimer) clearInterval(this._usageTimer);
+    this._usageTimer = setInterval(function() { self._refreshUsage(); }, 15000);
+  },
+
+  async refresh() {
+    const [ov, st, hm, tl, usage, metrics, act] = await Promise.all([
+      API.overview(), API.globalStats(),
+      API.heatmap10min(), API.timeline(24), API.usageGlobal(), API.metrics(),
+      API.get('/api/supervisor/activity?limit=80')
+    ]);
+    if (st.ok) this._stats = st.stats;
+    if (ov.ok) this._data = ov.teams;
+    if (st.ok) this._renderStats(st.stats, usage.ok ? usage : null, metrics.ok ? metrics.metrics : null);
+    if (hm.ok) this._renderHeatmapGrid(hm.data);
+    if (tl.ok) this._renderAreaChart(tl);
+    this._updateHeaderStats(st.ok ? st.stats : null);
+    if (typeof Sidebar !== 'undefined') Sidebar.updateTeams(ov.ok ? ov.teams : []);
+    // 글로벌 히스토리 피드 (초기 로드)
+    if (act.ok) this._renderGlobalFeed(act.logs || [], null, null);
+  },
+
+
+  /* ── 19초 KPI 라이트 갱신 (차트 안 건드림) ── */
+  async _quickRefreshStats() {
+    const [ov, st, usage, metrics] = await Promise.all([
+      API.overview(), API.globalStats(), API.usageGlobal(), API.metrics()
+    ]);
+    if (st.ok) {
+      var prev = this._stats;
+      this._stats = st.stats;
+      this._renderStats(st.stats, usage.ok ? usage : null, metrics.ok ? metrics.metrics : null);
+      // flash 변경된 카드
+      if (prev) this._flashChangedCards(prev, st.stats);
+    }
+    if (ov.ok) {
+      this._data = ov.teams;
+      if (typeof Sidebar !== 'undefined') Sidebar.updateTeams(ov.teams);
+    }
+    this._updateHeaderStats(st.ok ? st.stats : null);
+    // 팀 그리드도 갱신 (진도율/숫자)
+    if (this._data && this._viewMode === 'dashboard') this._renderTeamGrid(this._data);
+  },
+
+  _flashChangedCards(prev, curr) {
+    var keys = ['active_teams','total_agents','total_tickets','global_progress','blocked_tickets','total_messages'];
+    keys.forEach(function(k) {
+      if (prev[k] !== curr[k]) {
+        var card = Utils.$('stat_' + k);
+        if (card) { card.classList.add('flash'); setTimeout(function(){ card.classList.remove('flash'); }, 800); }
+      }
+    });
+  },
+
+  async _refreshUsage() {
+    var usage = await API.usageGlobal();
+    if (!usage.ok) return;
+    var t = usage.total || {};
+    var td = usage.today || {};
+    var totalTokens = (t.input_tokens || 0) + (t.output_tokens || 0);
+    var todayTokens = (td.input_tokens || 0) + (td.output_tokens || 0);
+    var pairs = [
+      ['statVal_total_cost', '$' + (t.total_cost || 0).toFixed(2)],
+      ['statVal_today_cost', '$' + (td.total_cost || 0).toFixed(2)],
+      ['statVal_total_tokens', Utils.fmtNum(totalTokens)],
+      ['statVal_today_tokens', Utils.fmtNum(todayTokens)]
+    ];
+    pairs.forEach(function(p) {
+      var el = Utils.$(p[0]);
+      if (el && el.textContent !== p[1]) {
+        el.textContent = p[1];
+        var card = el.closest('.stat-card');
+        if (card) { card.classList.add('flash'); setTimeout(function() { card.classList.remove('flash'); }, 500); }
+      }
+    });
+  },
+
+  /* ── Compact Stat Cards (9 cards) ── */
+  _renderStats(s, usage, metrics) {
+    const el = Utils.$('dashStats');
+    if (!el) return;
+
+    var totalCost = 0, todayCost = 0, totalTokens = 0, todayTokens = 0;
+    if (usage && usage.ok) {
+      totalCost = (usage.total && usage.total.total_cost) || 0;
+      todayCost = (usage.today && usage.today.total_cost) || 0;
+      var ut = usage.total || {}, utd = usage.today || {};
+      totalTokens = (ut.input_tokens || 0) + (ut.output_tokens || 0);
+      todayTokens = (utd.input_tokens || 0) + (utd.output_tokens || 0);
+    }
+    var nodeCount = (metrics && metrics.node_count) || 0;
+    var nodeMem = (metrics && metrics.node_memory_mb) || 0;
+
+    const cards = [
+      { key: 'active_teams', v: s.active_teams, label: 'Teams', color: '--chart-blue', sub: s.archived_teams ? s.archived_teams + ' archived' : '-' },
+      { key: 'total_agents', v: s.total_agents, label: 'Agents', color: '--chart-cyan', sub: s.working_agents + ' working' },
+      { key: 'total_tickets', v: s.total_tickets, label: 'Tickets', color: '--chart-purple', sub: s.done_tickets + ' done' },
+      { key: 'global_progress', v: s.global_progress, label: 'Progress', color: '--chart-green', sub: 'completion', suffix: '%' },
+      { key: 'blocked_tickets', v: s.blocked_tickets, label: 'Blocked', color: '--chart-red', sub: s.blocked_tickets > 0 ? 'needs attention' : 'all clear' },
+      { key: 'total_messages', v: s.total_messages, label: 'Messages', color: '--chart-orange', sub: s.total_artifacts + ' artifacts' },
+      { key: 'total_tokens', v: Utils.fmtNum(totalTokens), label: 'Tokens', color: '--chart-teal', sub: 'in+cache+out', raw: true },
+      { key: 'total_cost', v: '$' + totalCost.toFixed(2), label: 'Total Cost', color: '--chart-yellow', sub: 'all time', raw: true },
+      { key: 'today_cost', v: '$' + todayCost.toFixed(2), label: 'Today', color: '--chart-lime', sub: '$' + todayCost.toFixed(2) + ' / ' + Utils.fmtNum(todayTokens) + ' tok', raw: true },
+      { key: 'node_procs', v: nodeCount, label: 'Node', color: nodeCount > 5 ? '--chart-red' : '--chart-gray', sub: nodeMem + 'MB' }
+    ];
+
+    /* Static layout, no user-supplied strings */
+    el.innerHTML = cards.map(function(c) {
+      return [
+        '<div class="stat-card" id="stat_' + c.key + '">',
+        '  <div class="stat-accent" style="background:var(' + c.color + ')"></div>',
+        '  <div class="stat-label">' + c.label + '</div>',
+        '  <div class="stat-value" style="color:var(' + c.color + ')" id="statVal_' + c.key + '">' + c.v + (c.suffix || '') + '</div>',
+        '  <div class="stat-sub">' + c.sub + '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+    /* Animate changed values */
+    if (this._prevStats) {
+      var self = this;
+      cards.forEach(function(c) {
+        var oldVal = self._prevStats[c.key];
+        if (oldVal !== undefined && oldVal !== c.v) {
+          var valEl = Utils.$('statVal_' + c.key);
+          var card = Utils.$('stat_' + c.key);
+          if (valEl && !c.raw) Charts.animateValue(valEl, oldVal, c.v, 600, c.suffix || '');
+          else if (valEl && c.raw) valEl.textContent = c.v;
+          if (card) {
+            card.classList.add('flash');
+            setTimeout(function() { card.classList.remove('flash'); }, 500);
+          }
+        }
+      });
+    }
+    this._prevStats = Object.assign({}, s);
+
+    /* 노드 카드 클릭 → 프로세스 상세 */
+    var nodeCard = Utils.$('stat_node_procs');
+    if (nodeCard) {
+      nodeCard.style.cursor = 'pointer';
+      nodeCard.addEventListener('click', function() { Dashboard.showNodeProcesses(); });
+    }
+  },
+
+  async showNodeProcesses() {
+    var res = await API.get('/api/system/processes');
+    var procs = (res.ok ? res.processes : []) || [];
+
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+    var box = document.createElement('div');
+    box.className = 'modal-box ticket-detail-modal';
+
+    var hdr = document.createElement('div');
+    hdr.className = 'modal-header';
+    var h3 = document.createElement('h3');
+    h3.textContent = 'Node/Claude Processes (' + procs.length + ')';
+    hdr.appendChild(h3);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-sm';
+    closeBtn.textContent = '\u2715';
+    closeBtn.addEventListener('click', function() { modal.remove(); });
+    hdr.appendChild(closeBtn);
+    box.appendChild(hdr);
+
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:12px 18px; overflow-y:auto; flex:1';
+
+    if (!procs.length) {
+      var empty = document.createElement('div');
+      empty.className = 'terminal-placeholder';
+      empty.textContent = '실행 중인 Node/Claude 프로세스가 없습니다';
+      body.appendChild(empty);
+    }
+
+    procs.forEach(function(p) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04)';
+
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1; min-width:0';
+      var name = document.createElement('div');
+      name.style.cssText = 'font-size:12px; font-weight:600';
+      name.textContent = p.name + ' (PID: ' + p.pid + ')';
+      info.appendChild(name);
+      var cmd = document.createElement('div');
+      cmd.style.cssText = 'font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+      cmd.textContent = p.cmd || '';
+      info.appendChild(cmd);
+      row.appendChild(info);
+
+      var mem = document.createElement('span');
+      mem.style.cssText = 'font-size:11px; color:var(--chart-cyan); font-family:var(--mono); margin-left:8px';
+      mem.textContent = p.mem_mb + 'MB';
+      row.appendChild(mem);
+
+      var killBtn = document.createElement('button');
+      killBtn.className = 'btn btn-xs btn-danger';
+      killBtn.textContent = 'Kill';
+      killBtn.style.marginLeft = '8px';
+      killBtn.addEventListener('click', function() {
+        API.post('/api/system/kill-process', { pid: p.pid }).then(function() {
+          row.remove();
+        });
+      });
+      row.appendChild(killBtn);
+
+      body.appendChild(row);
+    });
+
+    box.appendChild(body);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+  },
+
+  /* ── Activity Heatmap — 10분 단위 48h (6행 × 48열) ── */
+  _renderHeatmapGrid(data) {
+    var el = Utils.$('dashHeatmap');
+    if (!el) return;
+
+    var now = new Date();
+    var tzOffsetMin = -now.getTimezoneOffset();
+    /* 현재 10분 슬롯 (로컬) */
+    var nowLocalH = now.getHours();
+    var nowLocalM = Math.floor(now.getMinutes() / 10) * 10;
+
+    /* 서버 데이터: { "YYYY-MM-DDTHH:MM": count } (UTC 기준) */
+    var slotMap = data || {};
+    var maxVal = 0;
+    Object.values(slotMap).forEach(function(v) { if (v > maxVal) maxVal = v; });
+    if (!maxVal) maxVal = 1;
+
+    function getColor(count) {
+      if (!count) return 'rgba(255,255,255,0.05)';
+      var pct = count / maxVal;
+      if (pct <= 0.25) {
+        return 'rgba(1,118,211,' + (0.15 + (pct / 0.25) * 0.85).toFixed(2) + ')';
+      } else if (pct <= 0.6) {
+        var t = (pct - 0.25) / 0.35;
+        return 'rgb(' + Math.round(1 + t * 254) + ',' + Math.round(118 + t * 34) + ',' + Math.round(211 - t * 211) + ')';
+      } else {
+        var t2 = (pct - 0.6) / 0.4;
+        return 'rgb(' + Math.round(255 - t2 * 16) + ',' + Math.round(152 - t2 * 84) + ',' + Math.round(t2 * 68) + ')';
+      }
+    }
+
+    /*
+     * 48열(시간) × 6행(10분 슬롯)
+     * 왼쪽 = 48시간 전, 오른쪽 = 현재
+     * 각 열 = 1시간, 각 행 = :00 :10 :20 :30 :40 :50
+     */
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;width:100%';
+
+    /* 48시간 전부터 현재까지의 시작점 계산 */
+    var startDate = new Date(now.getTime() - 48 * 3600 * 1000);
+    startDate.setMinutes(0, 0, 0); // 정시 기준
+
+    /* 시간 헤더 (48열) — 매 3시간마다 레이블 표시 */
+    var header = document.createElement('div');
+    header.style.cssText = 'display:grid;grid-template-columns:24px repeat(48,minmax(0,1fr));gap:1px;margin-bottom:2px';
+    var corner = document.createElement('div');
+    header.appendChild(corner);
+    for (var col = 0; col < 48; col++) {
+      var colDate = new Date(startDate.getTime() + col * 3600 * 1000);
+      var hLabel = document.createElement('div');
+      var showLabel = (col % 3 === 0) || col === 47;
+      hLabel.style.cssText = 'text-align:center;font-size:7px;color:rgba(255,255,255,' + (showLabel ? '0.45' : '0') + ');font-family:var(--mono);white-space:nowrap';
+      if (showLabel) {
+        /* 날짜 경계에는 날짜도 표시 */
+        var hh = colDate.getHours();
+        if (hh === 0) {
+          hLabel.textContent = String(colDate.getMonth() + 1) + '/' + String(colDate.getDate());
+          hLabel.style.color = 'rgba(255,152,0,0.7)';
+        } else {
+          hLabel.textContent = String(hh).padStart(2, '0');
+        }
+      }
+      header.appendChild(hLabel);
+    }
+    wrap.appendChild(header);
+
+    /* 6행: 각 행 = 10분 슬롯 */
+    var minLabels = [':00', ':10', ':20', ':30', ':40', ':50'];
+    for (var mIdx = 0; mIdx < 6; mIdx++) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:24px repeat(48,minmax(0,1fr));gap:1px';
+
+      var rLabel = document.createElement('div');
+      rLabel.style.cssText = 'font-size:7px;color:rgba(255,255,255,0.35);font-family:var(--mono);display:flex;align-items:center;justify-content:flex-end;padding-right:2px;min-width:0;overflow:hidden';
+      rLabel.textContent = minLabels[mIdx];
+      row.appendChild(rLabel);
+
+      for (var col = 0; col < 48; col++) {
+        /* 로컬 시간으로 열 날짜/시간 계산 → UTC 키로 변환 */
+        var cellLocal = new Date(startDate.getTime() + col * 3600 * 1000 + mIdx * 10 * 60 * 1000);
+        var cellUTC = new Date(cellLocal.getTime());
+        var utcY = cellUTC.getUTCFullYear();
+        var utcMo = String(cellUTC.getUTCMonth() + 1).padStart(2, '0');
+        var utcD = String(cellUTC.getUTCDate()).padStart(2, '0');
+        var utcH = String(cellUTC.getUTCHours()).padStart(2, '0');
+        var utcMn = String(Math.floor(cellUTC.getUTCMinutes() / 10) * 10).padStart(2, '0');
+        var key = utcY + '-' + utcMo + '-' + utcD + 'T' + utcH + ':' + utcMn;
+        var count = slotMap[key] || 0;
+
+        var localH = cellLocal.getHours();
+        var localM = Math.floor(cellLocal.getMinutes() / 10) * 10;
+        var isNow = (localH === nowLocalH && localM === nowLocalM && col >= 46);
+
+        var cell = document.createElement('div');
+        cell.style.cssText = [
+          'border-radius:2px',
+          'background:' + getColor(count),
+          'cursor:default',
+          'height:10px',
+          'min-width:0',
+          isNow ? 'outline:1.5px solid rgba(1,118,211,0.9);outline-offset:-1px' : ''
+        ].filter(Boolean).join(';');
+
+        var dayStr = String(cellLocal.getMonth() + 1) + '/' + String(cellLocal.getDate());
+        cell.title = dayStr + ' ' + String(localH).padStart(2, '0') + minLabels[mIdx] + ' — ' + count;
+        row.appendChild(cell);
+      }
+      wrap.appendChild(row);
+    }
+
+    /* 범례 */
+    var legend = document.createElement('div');
+    legend.style.cssText = 'display:flex;align-items:center;gap:4px;margin-top:6px;justify-content:flex-end';
+    var lessEl = document.createElement('span');
+    lessEl.style.cssText = 'font-size:8px;color:rgba(255,255,255,0.3)';
+    lessEl.textContent = 'Less';
+    legend.appendChild(lessEl);
+    ['rgba(255,255,255,0.05)','rgba(1,118,211,0.3)','rgba(1,118,211,0.7)','rgba(1,118,211,1)','rgb(128,135,0)','rgb(255,152,0)','rgb(239,68,68)'].forEach(function(c) {
+      var sq = document.createElement('div');
+      sq.style.cssText = 'width:8px;height:8px;border-radius:1px;background:' + c;
+      legend.appendChild(sq);
+    });
+    var moreEl = document.createElement('span');
+    moreEl.style.cssText = 'font-size:8px;color:rgba(255,255,255,0.3)';
+    moreEl.textContent = 'More';
+    legend.appendChild(moreEl);
+    wrap.appendChild(legend);
+
+    while (el.firstChild) el.removeChild(el.firstChild);
+    el.appendChild(wrap);
+  },
+
+  /* ── 24h Ticket Activity — Area Chart (Canvas) ── */
+  _renderAreaChart(tl) {
+    var canvas = Utils.$('dashAreaChart');
+    if (!canvas) return;
+
+    var s = Charts.setupCanvas(canvas);
+    if (!s.ctx) return;
+    var ctx = s.ctx, w = s.w, h = s.h;
+    ctx.clearRect(0, 0, w, h);
+
+    var now = new Date();
+    var hours = [];
+    for (var i = 23; i >= 0; i--) {
+      var d = new Date(now);
+      d.setUTCMinutes(0, 0, 0);
+      d.setUTCHours(d.getUTCHours() - i);
+      /* 서버는 UTC 기준 키 사용 — UTC로 키 생성 후 레이블만 로컬 시간으로 표시 */
+      var key = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getUTCDate()).padStart(2, '0') + 'T' + String(d.getUTCHours()).padStart(2, '0') + ':00:00';
+      var act = (tl.activity || {})[key] || {};
+      var total = 0;
+      Object.values(act).forEach(function(v) { total += v; });
+      hours.push({ label: String(d.getHours()).padStart(2, '0'), total: total });
+    }
+
+    var pad = { top: 8, right: 12, bottom: 24, left: 30 };
+    var cw = w - pad.left - pad.right;
+    var ch = h - pad.top - pad.bottom;
+
+    var maxVal = 0;
+    hours.forEach(function(hr) { if (hr.total > maxVal) maxVal = hr.total; });
+    if (!maxVal) maxVal = 5;
+
+    /* Grid */
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (var g = 0; g <= 4; g++) {
+      var gy = pad.top + ch - (g / 4) * ch;
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(w - pad.right, gy); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '500 8px ' + Charts._font();
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(maxVal * g / 4), pad.left - 4, gy);
+    }
+
+    /* X labels */
+    var stepX = cw / (hours.length - 1);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    hours.forEach(function(hr, idx) {
+      if (idx % 4 === 0 || idx === hours.length - 1) {
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '500 8px ' + Charts._font();
+        ctx.fillText(hr.label + 'h', pad.left + idx * stepX, h - pad.bottom + 6);
+      }
+    });
+
+    /* Points */
+    var points = hours.map(function(hr, idx) {
+      return { x: pad.left + idx * stepX, y: pad.top + ch - (hr.total / maxVal) * ch };
+    });
+    if (points.length < 2) return;
+
+    function buildPath() {
+      ctx.moveTo(points[0].x, points[0].y);
+      for (var j = 1; j < points.length; j++) {
+        var cpx = (points[j - 1].x + points[j].x) / 2;
+        ctx.bezierCurveTo(cpx, points[j - 1].y, cpx, points[j].y, points[j].x, points[j].y);
+      }
+    }
+
+    /* Area fill */
+    ctx.beginPath(); buildPath();
+    ctx.lineTo(points[points.length - 1].x, pad.top + ch);
+    ctx.lineTo(points[0].x, pad.top + ch); ctx.closePath();
+    var brand = Utils.cssVar('--brand') || '#0176D3';
+    var ag = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+    ag.addColorStop(0, Charts._rgba(brand, 0.35));
+    ag.addColorStop(1, Charts._rgba(brand, 0.02));
+    ctx.fillStyle = ag; ctx.fill();
+
+    /* Line with glow */
+    var lg = ctx.createLinearGradient(pad.left, 0, w - pad.right, 0);
+    lg.addColorStop(0, '#0176D3'); lg.addColorStop(1, '#06B6D4');
+    ctx.save();
+    ctx.shadowColor = Charts._rgba(brand, 0.5); ctx.shadowBlur = 10;
+    ctx.beginPath(); buildPath();
+    ctx.strokeStyle = lg; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath(); buildPath();
+    ctx.strokeStyle = lg; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+
+    /* End dot */
+    var last = points[points.length - 1];
+    ctx.beginPath(); ctx.arc(last.x, last.y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#06B6D4'; ctx.fill();
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  },
+
+  _renderTeamGrid(teams) {
+    const el = Utils.$('dashGrid');
+    const cnt = Utils.$('dashTeamCount');
+    if (!el) return;
+    if (cnt) cnt.textContent = teams.length;
+    if (!teams.length) {
+      el.innerHTML = '<div class="empty-state">No active teams</div>';
+      return;
+    }
+
+    /* Group teams by project_group */
+    var groups = {};
+    var self = this;
+    teams.forEach(function(t) {
+      var pg = (t.team && t.team.project_group) || 'Ungrouped';
+      if (!groups[pg]) groups[pg] = [];
+      groups[pg].push(t);
+    });
+
+    /* Drill-up mode: compact summary view */
+    if (this._drillView === 'up') {
+      this._renderDrillUpView(groups, el);
+      return;
+    }
+
+    /* Drill-down mode: detailed team list (optionally filtered) */
+    var filteredGroups = groups;
+    if (this._expandedGroup && groups[this._expandedGroup]) {
+      filteredGroups = {};
+      filteredGroups[this._expandedGroup] = groups[this._expandedGroup];
+    }
+
+    var html = '';
+    if (this._expandedGroup) {
+      html += '<div style="margin-bottom:6px"><button class="btn btn-sm" onclick="Dashboard._expandedGroup=null;Dashboard._renderTeamGrid(Dashboard._data)" style="font-size:var(--fs-2xs)">← All Groups</button></div>';
+    }
+    Object.keys(filteredGroups).sort().forEach(function(groupName) {
+      html += '<div class="dash-team-group">';
+      html += '<div style="font-size:var(--fs-2xs);font-weight:700;color:var(--brand-light);margin-bottom:4px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer" onclick="Dashboard.drillIntoGroup(\'' + Utils.esc(groupName).replace(/'/g, "\\'") + '\')">';
+      html += '<span style="width:5px;height:5px;border-radius:50%;background:var(--brand);display:inline-block"></span>';
+      html += Utils.esc(groupName);
+      html += ' <span style="color:var(--muted);font-weight:500">(' + filteredGroups[groupName].length + ')</span>';
+      html += '</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:3px">';
+      filteredGroups[groupName].forEach(function(t) {
+        html += self._buildTeamCard(t);
+      });
+      html += '</div></div>';
+    });
+
+    el.innerHTML = html;
+  },
+
+  _buildTeamCard(t) {
+    var team = t.team, sc = t.status_counts || {}, total = t.total_tickets;
+    var done = sc.Done || 0;
+    var progress = total > 0 ? Math.round(done / total * 100) : 0;
+    var progColor = total > 0 ? Utils.progressColor(progress) : 'var(--brand)';
+    var isComplete = progress >= 100 && total > 0;
+
+    /* Compact ticket summary: "IP3 BL2 DN1" */
+    var ticketSummary = '';
+    if (total > 0) {
+      Utils.COLUMNS.forEach(function(s) {
+        var n = sc[s] || 0;
+        if (n > 0) ticketSummary += '<span style="color:' + Utils.statusColor(s) + ';font-weight:600">' + Utils.statusLabel(s) + n + '</span> ';
+      });
+    } else {
+      ticketSummary = '<span style="color:var(--muted)">—</span>';
+    }
+
+    var archiveBtn = isComplete ? ' <button class="btn btn-sm btn-primary" style="padding:1px 8px;font-size:9px" onclick="event.stopPropagation();Dashboard.archiveTeam(\'' + team.team_id + '\')">Archive</button>' : '';
+
+    /* Compact single-row team card — sanitized via Utils.esc() */
+    return [
+      '<div class="team-row" onclick="Router.navigate(\'#/board/' + team.team_id + '\')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(39,43,53,0.5);border-radius:var(--radius-md);cursor:pointer;transition:all var(--dur) var(--ease);border-left:3px solid ' + progColor + '">',
+      '  <div style="flex:1;min-width:0">',
+      '    <div style="display:flex;align-items:center;gap:6px">',
+      '      <span style="font-size:var(--fs-sm);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + Utils.esc(team.name) + '</span>',
+      '      <span style="font-size:var(--fs-2xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">' + Utils.esc(team.description || '') + '</span>',
+      '    </div>',
+      '  </div>',
+      '  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:var(--fs-xs);font-family:var(--mono)">' + ticketSummary + '</div>',
+      '  <div style="width:60px;flex-shrink:0">',
+      '    <div class="progress-bar" style="margin:0"><div class="progress-fill" style="width:' + progress + '%;background:' + progColor + '"></div></div>',
+      '  </div>',
+      '  <span style="font-size:var(--fs-xs);font-weight:800;font-family:var(--mono);color:' + progColor + ';width:32px;text-align:right;flex-shrink:0">' + progress + '%</span>',
+      '  <span style="font-size:var(--fs-2xs);color:var(--muted);flex-shrink:0">' + t.member_count + 'A</span>',
+           archiveBtn,
+      '</div>'
+    ].join('');
+  },
+
+  /* Activity feed: all fields sanitized via Utils.esc() */
+  _renderFeed(logs) {
+    const el = Utils.$('dashFeed');
+    const cnt = Utils.$('dashFeedCount');
+    if (!el) return;
+    if (cnt) cnt.textContent = logs.length;
+    el.innerHTML = logs.map(function(l) {
+      return [
+        '<div class="log-entry" data-type="' + Utils.esc(l.action || '') + '">',
+        '  <div class="log-head">',
+        '    <span class="log-time">' + Utils.timeFmt(l.created_at) + '</span>',
+        '    <span class="log-agent">' + Utils.esc(l.team_name || l.team_id || '-') + '</span>',
+        '    <span class="log-action">' + Utils.esc(l.action) + '</span>',
+        '  </div>',
+        '  <div class="log-msg">' + Utils.esc(l.message || '') + '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+    el.scrollTop = 0;
+  },
+
+  _updateHeaderStats(stats) {
+    const el = Utils.$('headerStats');
+    if (!el || !stats) return;
+    /* Numeric values only, no user input */
+    el.innerHTML = [
+      '<div class="header-stat"><span class="val">' + stats.active_teams + '</span> teams</div>',
+      '<div class="header-stat"><span class="val">' + stats.working_agents + '</span> working</div>',
+      '<div class="header-stat"><span class="val">' + stats.total_tickets + '</span> tickets</div>',
+      '<div class="header-stat"><span class="val">' + stats.global_progress + '%</span> progress</div>'
+    ].join('');
+  },
+
+  _startSSE() {
+    var self = this;
+    SSE.connectGlobal(function(data) {
+      var el = Utils.$('dashFeed');
+      if (!el) return;
+      var eventType = data.event_type || data.type || '';
+      /* SSE data sanitized via Utils.esc() */
+      var entry = [
+        '<div class="log-entry new" data-type="' + Utils.esc(eventType) + '">',
+        '  <div class="log-head">',
+        '    <span class="log-time">' + Utils.timeFmt(data.timestamp || new Date().toISOString()) + '</span>',
+        '    <span class="log-agent">' + Utils.esc(data.team_name || data.team_id || '-') + '</span>',
+        '    <span class="log-action">' + Utils.esc(eventType) + '</span>',
+        '  </div>',
+        '  <div class="log-msg">' + Utils.esc(JSON.stringify(data.data || data.payload || '')) + '</div>',
+        '</div>'
+      ].join('');
+      el.insertAdjacentHTML('afterbegin', entry);
+      while (el.children.length > 200) el.removeChild(el.lastChild);
+
+      var cnt = Utils.$('dashFeedCount');
+      if (cnt) cnt.textContent = el.children.length;
+
+      var firstChild = el.firstElementChild;
+      if (firstChild) setTimeout(function() { firstChild.classList.remove('new'); }, 300);
+
+      var refreshEvents = ['team_created', 'status_changed', 'ticket_status_changed', 'ticket_created', 'ticket_claimed', 'member_spawned', 'team_archived', 'team_auto_archived'];
+      var feedEvents = ['ticket_status_changed', 'ticket_created', 'member_spawned', 'artifact_created', 'feedback_created'];
+      if (refreshEvents.indexOf(eventType) !== -1) self.refresh();
+      if (feedEvents.indexOf(eventType) !== -1) {
+        API.get('/api/supervisor/activity?limit=80').then(function(act) {
+          if (act.ok) self._renderGlobalFeed(act.logs || [], null, null);
+        });
+      }
+    });
+  },
+
+  toggleDrill() {
+    this._drillView = this._drillView === 'up' ? 'down' : 'up';
+    this._expandedGroup = null;
+    var btn = Utils.$('drillToggle');
+    if (btn) btn.textContent = this._drillView === 'up' ? '▤ Summary' : '▦ Details';
+    if (this._data) this._renderTeamGrid(this._data);
+  },
+
+  drillIntoGroup(groupName) {
+    this._expandedGroup = groupName;
+    this._drillView = 'down';
+    var btn = Utils.$('drillToggle');
+    if (btn) btn.textContent = '▦ Details';
+    if (this._data) this._renderTeamGrid(this._data);
+  },
+
+  /* Drill-up view: compact project group summary with horizontal gauge */
+  _renderDrillUpView(groups, el) {
+    var html = '';
+    var self = this;
+    Object.keys(groups).sort().forEach(function(groupName) {
+      var teams = groups[groupName];
+      var totalTickets = 0, doneTickets = 0, totalAgents = 0, workingAgents = 0;
+      teams.forEach(function(t) {
+        var sc = t.status_counts || {};
+        totalTickets += t.total_tickets || 0;
+        doneTickets += sc.Done || 0;
+        totalAgents += t.member_count || 0;
+        (t.members || []).forEach(function(m) { if (m.status === 'Working') workingAgents++; });
+      });
+      var progress = totalTickets > 0 ? Math.round(doneTickets / totalTickets * 100) : 0;
+      var progColor = totalTickets > 0 ? Utils.progressColor(progress) : 'var(--brand)';
+
+      /* Status segment counts for mini heatmap bar */
+      var statusCounts = {};
+      teams.forEach(function(t) {
+        var sc = t.status_counts || {};
+        Object.keys(sc).forEach(function(s) { statusCounts[s] = (statusCounts[s] || 0) + sc[s]; });
+      });
+
+      html += '<div class="drill-up-row" onclick="Dashboard.drillIntoGroup(\'' + Utils.esc(groupName).replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(39,43,53,0.5);border-radius:var(--radius-md);cursor:pointer;transition:all var(--dur) var(--ease);margin-bottom:4px;border-left:3px solid ' + progColor + '">';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="display:flex;align-items:center;gap:6px">';
+      html += '<span style="font-size:var(--fs-sm);font-weight:700">' + Utils.esc(groupName) + '</span>';
+      html += '<span style="font-size:var(--fs-2xs);color:var(--muted)">' + teams.length + ' teams</span>';
+      html += '<span style="font-size:var(--fs-2xs);color:var(--text-secondary)">' + totalAgents + 'A</span>';
+      html += '</div></div>';
+
+      /* Heatmap-style status gauge bar */
+      html += '<div style="width:180px;flex-shrink:0">';
+      if (totalTickets > 0) {
+        html += '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,0.04)">';
+        Utils.COLUMNS.forEach(function(col) {
+          var n = statusCounts[col] || 0;
+          if (!n) return;
+          var pct = (n / totalTickets * 100);
+          html += '<div style="width:' + pct + '%;background:' + Utils.statusColor(col) + ';transition:width 0.3s" title="' + Utils.colName(col) + ': ' + n + '"></div>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+
+      html += '<span style="font-size:var(--fs-xs);font-weight:800;font-family:var(--mono);color:' + progColor + ';width:36px;text-align:right;flex-shrink:0">' + progress + '%</span>';
+      html += '<span style="font-size:var(--fs-2xs);color:var(--muted);flex-shrink:0">' + totalTickets + 'T</span>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  },
+
+  async archiveTeam(teamId) {
+    if (!confirm('Archive this team? It will be removed from the dashboard.')) return;
+    var res = await API.teamArchive(teamId);
+    if (res.ok) await this.refresh();
+    else alert(res.message || 'Archive failed');
+  },
+
+  /* ── 좌측 사이드바: 프로젝트 리스트 + 팀 목록 ── */
+  _projects: [],
+
+  async _loadProjects() {
+    try {
+      var res = await API.get('/api/projects');
+      if (res.ok && res.projects) {
+        this._projects = res.projects.map(function(p) {
+          return { name: p.name, path: p.path, alias: p.alias };
+        });
+      }
+    } catch(e) { /* fallback to empty */ }
+  },
+
+  _renderSidebar(teams) {
+    var el = Utils.$('dashSidebar');
+    if (!el) return;
+    var projCount = Utils.$('dashProjCount');
+    if (projCount) projCount.textContent = this._projects.length;
+
+    /* 프로젝트를 project_group으로 묶기 (team이 중첩 구조일 수 있음) */
+    var teamsByGroup = {};
+    (teams || []).forEach(function(t) {
+      var team = t.team || t;
+      var g = team.project_group || t.project_group || 'Ungrouped';
+      /* 플랫화: team 필드를 최상위로 복사 */
+      if (t.team && !t.name) {
+        t.name = team.name;
+        t.team_id = team.team_id;
+        t.project_group = g;
+      }
+      if (!teamsByGroup[g]) teamsByGroup[g] = [];
+      teamsByGroup[g].push(t);
+    });
+
+    var html = '';
+    var self = this;
+    this._projects.forEach(function(proj, i) {
+      var selected = self._selectedProject === proj.name;
+      /* project_group 매칭: name, alias, 부분 매칭 */
+      var projTeams = teamsByGroup[proj.name] || teamsByGroup[proj.alias] || [];
+      if (!projTeams.length) {
+        Object.keys(teamsByGroup).forEach(function(g) {
+          if (!projTeams.length && (g.toLowerCase().indexOf(proj.name.toLowerCase()) >= 0 || proj.name.toLowerCase().indexOf(g.toLowerCase()) >= 0)) {
+            projTeams = teamsByGroup[g];
+          }
+        });
+      }
+      var teamCount = projTeams.length;
+      var activeClass = selected ? ' sb-item-active' : '';
+      var chevron = selected ? '▼' : '▶';
+
+      var aliasText = proj.alias && proj.alias !== proj.name ? Utils.esc(proj.alias) : Utils.esc(proj.name);
+      html += '<div class="sb-item' + activeClass + '" onclick="Dashboard.selectProject(\'' + Utils.esc(proj.name) + '\')">';
+      html += '<span class="sb-item-name">';
+      if (teamCount > 0) html += '<span style="font-size:10px;margin-right:4px;opacity:0.5">' + chevron + '</span>';
+      html += aliasText + '</span>';
+      html += '<span class="sb-item-stats">';
+      if (teamCount > 0) {
+        var projDone = 0, projTotal = 0;
+        projTeams.forEach(function(t) { projDone += (t.done_tickets || 0); projTotal += (t.total_tickets || 0); });
+        var projPct = projTotal > 0 ? Math.round(projDone / projTotal * 100) : 0;
+        html += '<span class="badge badge-sm">' + teamCount + '</span>';
+        if (projTotal > 0) html += '<span style="font-size:10px;color:' + (projPct === 100 ? 'var(--chart-green)' : 'var(--muted)') + ';margin-left:4px">' + projPct + '%</span>';
+      }
+      html += '</span></div>';
+
+      /* 선택된 프로젝트의 팀 목록 (좌측 사이드바에 펼침) */
+      if (selected && projTeams.length > 0) {
+        projTeams.forEach(function(t) {
+          var tSelected = self._selectedTeam === t.team_id;
+          var tClass = tSelected ? ' sb-team-active' : '';
+          var tickets = t.total_tickets || 0;
+          var done = t.done_tickets || 0;
+          var pct = tickets > 0 ? Math.round(done / tickets * 100) : 0;
+          html += '<div class="sb-team' + tClass + '" onclick="event.stopPropagation();Dashboard.selectTeam(\'' + t.team_id + '\')">';
+          html += '<span class="sb-team-name">' + Utils.esc(t.name.replace(/^TEAM-/, '')) + '</span>';
+          html += '<span class="sb-team-info">';
+          html += '<span style="font-size:10px;color:var(--muted)">' + done + '/' + tickets + '</span>';
+          html += '<span class="sb-team-pct" style="color:' + (pct === 100 ? 'var(--chart-green)' : pct > 0 ? 'var(--chart-cyan)' : 'var(--muted)') + '">' + pct + '%</span>';
+          html += '</span></div>';
+        });
+      }
+    });
+    el.innerHTML = html;
+  },
+
+  selectProject(name) {
+    if (this._selectedProject === name) {
+      this._selectedProject = null;
+      this._selectedTeam = null;
+    } else {
+      this._selectedProject = name;
+      this._selectedTeam = null;
+    }
+    this.showDashboard();
+
+    /* 중앙 패널: 프로젝트의 팀 목록 */
+    var main = Utils.$('dashMainBody');
+    var titleEl = Utils.$('dashMainTitle');
+    if (!main || !this._selectedProject) return;
+    if (titleEl) titleEl.textContent = Utils.esc(name) + ' — Teams';
+
+    var teams = (this._data || []).filter(function(t) {
+      return t.project_group === name || t.name.indexOf(name) >= 0;
+    });
+    var countEl = Utils.$('dashTeamCount');
+    if (countEl) countEl.textContent = teams.length;
+
+    if (!teams.length) {
+      var mainDiv = document.createElement('div');
+      mainDiv.className = 'terminal-placeholder';
+      mainDiv.textContent = '이 프로젝트에 팀이 없습니다. 지시를 입력하여 팀을 생성하세요.';
+      main.innerHTML = '';
+      main.appendChild(mainDiv);
+      return;
+    }
+
+    main.innerHTML = '';
+    var grid = document.createElement('div');
+    grid.className = 'team-grid';
+    teams.forEach(function(t) {
+      var card = document.createElement('div');
+      card.className = 'team-card';
+      card.addEventListener('click', function() { Dashboard.selectTeam(t.team_id); });
+
+      var done = (t.tickets || []).filter(function(tk) { return tk.status === 'Done'; }).length;
+      var total = (t.tickets || []).length;
+      var pct = total ? Math.round(done / total * 100) : 0;
+
+      var h4 = document.createElement('h4');
+      h4.textContent = t.name;
+      card.appendChild(h4);
+
+      var info = document.createElement('div');
+      info.className = 'team-card-info';
+      info.textContent = done + '/' + total + ' tickets (' + pct + '%)';
+      card.appendChild(info);
+
+      var bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      var fill = document.createElement('div');
+      fill.className = 'progress-fill';
+      fill.style.width = pct + '%';
+      bar.appendChild(fill);
+      card.appendChild(bar);
+
+      grid.appendChild(card);
+    });
+    main.appendChild(grid);
+  },
+
+  async selectTeam(teamId) {
+    this._selectedTeam = teamId;
+    this._viewMode = 'kanban';
+    if (typeof Sidebar !== 'undefined') Sidebar.setActiveTeam(teamId);
+
+    /* 상단을 칸반보드로 전환 */
+    var kpiView = Utils.$('dashKpiView');
+    var kanbanView = Utils.$('dashKanbanView');
+    if (kpiView) kpiView.style.display = 'none';
+    if (kanbanView) {
+      kanbanView.style.display = 'block';
+      kanbanView.textContent = 'Loading board...';
+    }
+
+    var breadcrumb = Utils.$('dashBreadcrumb');
+    if (breadcrumb) {
+      var team = (this._data || []).find(function(t) { return t.team_id === teamId; });
+      breadcrumb.textContent = (this._selectedProject || '') + ' > ' + (team ? team.name : teamId);
+    }
+
+    /* 보드 데이터 로드 + 히스토리 로드 (병렬) */
+    var boardP = API.teamBoard(teamId);
+    var histP = API.get('/api/agent/conversations/' + teamId);
+    var board = await boardP;
+    var hist = await histP;
+
+    if (!board.ok || !kanbanView) return;
+    var t = board.board.team;
+    var tickets = board.board.tickets || [];
+
+    /* 중앙 패널: 티켓 목록 */
+    var main = Utils.$('dashMainBody');
+    var titleEl = Utils.$('dashMainTitle');
+    if (titleEl) titleEl.textContent = Utils.esc(t.name) + ' — Tickets';
+    var countEl = Utils.$('dashTeamCount');
+    if (countEl) countEl.textContent = tickets.length;
+
+    if (main) {
+      main.innerHTML = '';
+      var tbl = document.createElement('div');
+      tbl.className = 'ticket-list';
+      tickets.forEach(function(tk) {
+        var row = document.createElement('div');
+        row.className = 'ticket-row';
+        row.addEventListener('click', function() { Dashboard.showTicketHistory(tk.ticket_id); });
+
+        var statusDot = document.createElement('span');
+        statusDot.className = 'status-dot';
+        statusDot.style.background = Utils.statusColor(tk.status);
+        row.appendChild(statusDot);
+
+        var title = document.createElement('span');
+        title.className = 'ticket-title';
+        title.textContent = tk.title;
+        row.appendChild(title);
+
+        var status = document.createElement('span');
+        status.className = 'ticket-status';
+        status.textContent = tk.status;
+        row.appendChild(status);
+
+        var retry = tk.retry_count ? document.createElement('span') : null;
+        if (retry) {
+          retry.className = 'ticket-retry';
+          retry.textContent = 'R' + tk.retry_count + '/' + (tk.max_retries || 3);
+          row.appendChild(retry);
+        }
+
+        tbl.appendChild(row);
+      });
+      main.appendChild(tbl);
+    }
+
+    /* 칸반보드 (상단) — 카드형 + 좌측 컬러바 + 로딩바 */
+    kanbanView.innerHTML = '';
+    var kanbanDiv = document.createElement('div');
+    kanbanDiv.className = 'kanban-mini';
+
+    var header = document.createElement('div');
+    header.className = 'kanban-mini-header';
+    var h3 = document.createElement('h3');
+    h3.textContent = t.name;
+    header.appendChild(h3);
+    var done = tickets.filter(function(tk) { return tk.status === 'Done'; }).length;
+    var pctAll = tickets.length ? Math.round(done / tickets.length * 100) : 0;
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = done + '/' + tickets.length + ' (' + pctAll + '%)';
+    header.appendChild(badge);
+    kanbanDiv.appendChild(header);
+
+    var cols = document.createElement('div');
+    cols.className = 'kanban-mini-cols';
+    Utils.COLUMNS.forEach(function(col) {
+      var colTickets = tickets.filter(function(tk) { return tk.status === col; });
+      var colDiv = document.createElement('div');
+      colDiv.className = 'kanban-mini-col';
+      var colColor = Utils.statusColor(col);
+
+      var colHead = document.createElement('div');
+      colHead.className = 'kanban-mini-col-head';
+      colHead.style.borderTop = '3px solid ' + colColor;
+      colHead.textContent = Utils.colName(col) + ' ' + colTickets.length;
+      colDiv.appendChild(colHead);
+
+      var colBody = document.createElement('div');
+      colBody.className = 'kanban-mini-col-body';
+
+      colTickets.forEach(function(tk) {
+        var card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.addEventListener('click', function(e) { e.stopPropagation(); Dashboard.showTicketDetail(tk.ticket_id); });
+
+        /* 좌측 컬러바 */
+        var colorBar = document.createElement('div');
+        colorBar.className = 'kanban-card-bar';
+        colorBar.style.background = colColor;
+        card.appendChild(colorBar);
+
+        var cardBody = document.createElement('div');
+        cardBody.className = 'kanban-card-body';
+
+        var ttl = document.createElement('div');
+        ttl.className = 'kanban-card-title';
+        ttl.textContent = tk.title;
+        cardBody.appendChild(ttl);
+
+        /* 메타 정보 */
+        var meta = document.createElement('div');
+        meta.className = 'kanban-card-meta';
+        var priorityIcon = tk.priority === 'High' ? '🔴' : tk.priority === 'Low' ? '🔵' : '🟡';
+        meta.textContent = priorityIcon + ' ' + (tk.priority || 'Medium');
+        if (tk.assigned_member_id) meta.textContent += ' · ' + tk.assigned_member_id.substring(0, 8);
+        if (tk.retry_count) meta.textContent += ' · R' + tk.retry_count + '/3';
+        cardBody.appendChild(meta);
+
+        /* 로딩바 (InProgress일 때 애니메이션) */
+        var progressWrap = document.createElement('div');
+        progressWrap.className = 'kanban-card-progress';
+        var progressFill = document.createElement('div');
+        progressFill.className = 'kanban-card-progress-fill';
+        if (col === 'InProgress') {
+          progressFill.classList.add('kanban-card-progress-anim');
+          progressFill.style.width = '60%';
+        } else if (col === 'Review') {
+          progressFill.style.width = '85%';
+          progressFill.style.background = 'var(--chart-purple, #a855f7)';
+        } else if (col === 'Done') {
+          progressFill.style.width = '100%';
+          progressFill.style.background = 'var(--chart-green, #22c55e)';
+        } else if (col === 'Blocked') {
+          progressFill.style.width = '100%';
+          progressFill.style.background = 'var(--chart-red, #ef4444)';
+        } else {
+          progressFill.style.width = '0%';
+        }
+        progressWrap.appendChild(progressFill);
+        cardBody.appendChild(progressWrap);
+
+        card.appendChild(cardBody);
+        colBody.appendChild(card);
+      });
+
+      colDiv.appendChild(colBody);
+      cols.appendChild(colDiv);
+    });
+    kanbanDiv.appendChild(cols);
+    kanbanView.appendChild(kanbanDiv);
+
+    /* 우측 히스토리 패널: 팀 필터 글로벌 피드 */
+    var self = this;
+    API.get('/api/supervisor/activity?limit=80').then(function(act) {
+      if (act.ok) self._renderGlobalFeed(act.logs || [], teamId, null);
+    });
+  },
+
+  _renderGlobalFeed(logs, filterTeamId, filterTicketId) {
+    var histBody = Utils.$('dashHistBody');
+    var histCount = Utils.$('dashHistCount');
+    var histHeader = Utils.$('dashHistHeader');
+    if (!histBody) return;
+
+    // 필터
+    var items = logs;
+    if (filterTicketId) items = logs.filter(function(l){ return l.ticket_id === filterTicketId; });
+    else if (filterTeamId) items = logs.filter(function(l){ return l.team_id === filterTeamId; });
+
+    if (histCount) histCount.textContent = items.length;
+
+    // 필터 뱃지
+    if (histHeader) {
+      histHeader.textContent = filterTicketId ? ('티켓: ' + filterTicketId)
+        : filterTeamId ? ('팀 필터')
+        : '전체 로그';
+    }
+
+    var ACTION_ICON = {
+      ticket_created: '🎫', ticket_status_changed: '🔄', ticket_claimed: '🤖',
+      member_spawned: '👾', team_created: '🏗️', team_archived: '📦',
+      artifact_created: '📎', feedback_created: '⭐', message_sent: '💬',
+      info: 'ℹ️', error: '❌', warn: '⚠️'
+    };
+    var ACTION_CLASS = {
+      ticket_status_changed: 'feed-status', artifact_created: 'feed-artifact',
+      feedback_created: 'feed-feedback', error: 'feed-error', warn: 'feed-warn',
+      member_spawned: 'feed-spawn', team_created: 'feed-team'
+    };
+
+    histBody.innerHTML = '';
+    if (!items.length) {
+      var ph = document.createElement('div');
+      ph.className = 'terminal-placeholder';
+      ph.textContent = filterTeamId ? '이 팀의 활동 로그가 없습니다' : '아직 활동 로그가 없습니다';
+      histBody.appendChild(ph);
+      return;
+    }
+
+    items.forEach(function(log) {
+      var item = document.createElement('div');
+      item.className = 'feed-item ' + (ACTION_CLASS[log.action] || 'feed-default');
+      var icon = ACTION_ICON[log.action] || '▸';
+      var teamName = log.team_name ? ('[' + log.team_name + '] ') : '';
+      var time = (log.created_at || '').substring(11, 16);
+      item.innerHTML =
+        '<div class="feed-meta"><span class="feed-icon">' + icon + '</span>'
+        + '<span class="feed-team">' + Utils.esc(teamName) + '</span>'
+        + '<span class="feed-time">' + time + '</span></div>'
+        + '<div class="feed-msg">' + Utils.esc((log.message || log.action || '').substring(0, 120)) + '</div>';
+      histBody.appendChild(item);
+    });
+  },
+
+  _renderHistoryPanel(conversations, teamId) {
+    this._renderGlobalFeed(conversations.map(function(c){ return {
+      action: 'message_sent', message: c.content, team_name: '', created_at: c.created_at
+    }; }), teamId, null);
+  },
+
+  async showTicketHistory(ticketId) {
+    var histBody = Utils.$('dashHistBody');
+    var histCount = Utils.$('dashHistCount');
+    if (!histBody) return;
+    histBody.innerHTML = '';
+    var ph = document.createElement('div');
+    ph.className = 'terminal-placeholder';
+    ph.textContent = 'Loading...';
+    histBody.appendChild(ph);
+
+    var res = await API.get('/api/tickets/' + ticketId + '/history');
+    if (!res.ok) return;
+    var items = res.history || [];
+    if (histCount) histCount.textContent = items.length;
+
+    histBody.innerHTML = '';
+    if (!items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'terminal-placeholder';
+      empty.textContent = '히스토리가 없습니다';
+      histBody.appendChild(empty);
+      return;
+    }
+
+    var typeIcons = {conversation: '\ud83d\udcac', review: '\ud83d\udccb', artifact: '\ud83d\udce6', artifact_detail: '\ud83d\udcc4', activity: '\u26a1', feedback: '\u2b50'};
+    items.forEach(function(h) {
+      var item = document.createElement('div');
+      item.className = 'hist-item hist-' + h.type;
+      var meta = document.createElement('div');
+      meta.className = 'hist-meta';
+      var icon = typeIcons[h.type] || '\u2139\ufe0f';
+      meta.textContent = icon + ' ' + (h.type || '') + (h.actor ? ' \u00b7 ' + h.actor : '') + (h.sub_type ? ' [' + h.sub_type + ']' : '');
+      item.appendChild(meta);
+
+      if (h.score) {
+        var scoreEl = document.createElement('span');
+        scoreEl.className = 'hist-score';
+        scoreEl.textContent = '\u2b50' + h.score + '/5';
+        meta.appendChild(scoreEl);
+      }
+
+      var body = document.createElement('div');
+      body.className = 'hist-content';
+      body.textContent = h.detail || '';
+      item.appendChild(body);
+
+      if (h.issues) {
+        var issues = document.createElement('div');
+        issues.className = 'hist-issues';
+        issues.textContent = '\u26a0\ufe0f ' + h.issues;
+        item.appendChild(issues);
+      }
+      if (h.file_path) {
+        var fp = document.createElement('div');
+        fp.className = 'hist-file';
+        fp.textContent = '\ud83d\udcc4 ' + h.file_path + (h.lines_added ? ' +' + h.lines_added : '') + (h.lines_removed ? ' -' + h.lines_removed : '');
+        item.appendChild(fp);
+      }
+
+      var time = document.createElement('div');
+      time.className = 'hist-time';
+      time.textContent = (h.created_at || '').substring(0, 16);
+      item.appendChild(time);
+
+      histBody.appendChild(item);
+    });
+  },
+
+  async showTicketDetail(ticketId) {
+    /* 우측 히스토리 패널 + 탭 모달 (ticket-detail.js) */
+    this.showTicketHistory(ticketId);
+    if (window.TicketDetail) return TicketDetail.show(ticketId);
+
+    var res = await API.get('/api/tickets/' + ticketId + '/history');
+    var ticket = await API.get('/api/tickets/' + ticketId);
+    var tk = ticket.ticket || ticket;
+
+    var existing = document.getElementById('ticketDetailModal');
+    if (existing) existing.remove();
+
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'ticketDetailModal';
+    modal.style.display = 'flex';
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+    var box = document.createElement('div');
+    box.className = 'modal-box ticket-detail-modal';
+
+    /* Header */
+    var hdr = document.createElement('div');
+    hdr.className = 'modal-header';
+    var h3 = document.createElement('h3');
+    h3.textContent = tk.title || ticketId;
+    hdr.appendChild(h3);
+    var statusBadge = document.createElement('span');
+    statusBadge.className = 'badge';
+    statusBadge.style.background = Utils.statusColor(tk.status || 'Backlog');
+    statusBadge.textContent = tk.status || '?';
+    hdr.appendChild(statusBadge);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-sm';
+    closeBtn.textContent = '\u2715';
+    closeBtn.addEventListener('click', function() { modal.remove(); });
+    hdr.appendChild(closeBtn);
+    box.appendChild(hdr);
+
+    /* Info row */
+    var info = document.createElement('div');
+    info.className = 'ticket-detail-info';
+    info.textContent = [
+      tk.priority ? 'Priority: ' + tk.priority : '',
+      tk.assigned_member_id ? 'Agent: ' + tk.assigned_member_id : '',
+      tk.retry_count ? 'Retry: ' + tk.retry_count + '/3' : '',
+      tk.started_at ? 'Started: ' + tk.started_at : '',
+      tk.completed_at ? 'Completed: ' + tk.completed_at : ''
+    ].filter(Boolean).join(' · ');
+    box.appendChild(info);
+
+    if (tk.description) {
+      var desc = document.createElement('div');
+      desc.className = 'ticket-detail-desc';
+      desc.textContent = tk.description;
+      box.appendChild(desc);
+    }
+
+    /* History items */
+    var histDiv = document.createElement('div');
+    histDiv.className = 'ticket-detail-history';
+    var items = (res.ok ? res.history : []) || [];
+    var typeIcons = {conversation: '\ud83d\udcac', review: '\ud83d\udccb', artifact: '\ud83d\udce6', artifact_detail: '\ud83d\udcc4', activity: '\u26a1', feedback: '\u2b50'};
+
+    if (!items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'terminal-placeholder';
+      empty.textContent = '\uc544\uc9c1 \ud788\uc2a4\ud1a0\ub9ac\uac00 \uc5c6\uc2b5\ub2c8\ub2e4';
+      histDiv.appendChild(empty);
+    }
+    items.forEach(function(h) {
+      var row = document.createElement('div');
+      row.className = 'ticket-hist-row hist-' + h.type;
+      var icon = typeIcons[h.type] || '\u2139\ufe0f';
+      var meta = document.createElement('div');
+      meta.className = 'ticket-hist-meta';
+      meta.textContent = icon + ' ' + (h.type || '') + (h.actor ? ' · ' + h.actor : '') + (h.sub_type ? ' [' + h.sub_type + ']' : '');
+      if (h.score) meta.textContent += ' \u2b50' + h.score + '/5';
+      row.appendChild(meta);
+
+      var content = document.createElement('div');
+      content.className = 'ticket-hist-content';
+      content.textContent = h.detail || '';
+      row.appendChild(content);
+
+      if (h.file_path) {
+        var fp = document.createElement('div');
+        fp.className = 'ticket-hist-file';
+        fp.textContent = '\ud83d\udcc4 ' + h.file_path + (h.lines_added ? ' +' + h.lines_added : '') + (h.lines_removed ? ' -' + h.lines_removed : '');
+        row.appendChild(fp);
+      }
+      if (h.issues) {
+        var iss = document.createElement('div');
+        iss.className = 'ticket-hist-issues';
+        iss.textContent = '\u26a0\ufe0f ' + h.issues;
+        row.appendChild(iss);
+      }
+
+      var time = document.createElement('div');
+      time.className = 'ticket-hist-time';
+      time.textContent = (h.created_at || '').substring(0, 16);
+      row.appendChild(time);
+
+      histDiv.appendChild(row);
+    });
+    box.appendChild(histDiv);
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+  },
+
+  async quickInstruction() {
+    var proj = this._selectedProject;
+    if (!proj) { alert('먼저 프로젝트를 선택하세요'); return; }
+    var instruction = prompt(proj + ' 프로젝트에 대한 지시를 입력하세요:');
+    if (!instruction) return;
+    var res = await API.post('/api/orchestrate', { project_name: proj, instruction: instruction });
+    if (res.ok !== false) {
+      alert('지시가 전달되었습니다. 티켓이 자동 생성됩니다.');
+    } else {
+      alert('오류: ' + (res.error || 'unknown'));
+    }
+  },
+
+  showDashboard() {
+    this._viewMode = 'dashboard';
+    this._selectedTeam = null;
+    var kpiView = Utils.$('dashKpiView');
+    var kanbanView = Utils.$('dashKanbanView');
+    if (kpiView) kpiView.style.display = 'block';
+    if (kanbanView) kanbanView.style.display = 'none';
+    var residentView = document.getElementById('dashResidentView'); if (residentView) residentView.style.display = 'none';
+    var breadcrumb = Utils.$('dashBreadcrumb');
+    if (breadcrumb) breadcrumb.textContent = 'Overview';
+  },
+
+  async toggleAgent() {
+    var res = await API.get('/api/agent/status');
+    var running = res.ok && res.running;
+    if (running) {
+      await API.post('/api/agent/stop', {});
+      var btn = Utils.$('btnAgent');
+      if (btn) btn.textContent = '🤖 유디 (OFF)';
+    } else {
+      await API.post('/api/agent/start', {});
+      var btn2 = Utils.$('btnAgent');
+      if (btn2) btn2.textContent = '🤖 유디 (ON)';
+    }
+  },
+
+
+  async showResidentHistory() {
+    var upper = Utils.$('dashUpper');
+    if (!upper) return;
+    var kpiView = Utils.$('dashKpiView');
+    var kanbanView = Utils.$('dashKanbanView');
+    if (kpiView) kpiView.style.display = 'none';
+    if (kanbanView) kanbanView.style.display = 'none';
+    var agentKpiView = document.getElementById('dashAgentKpiView');
+    if (agentKpiView) agentKpiView.style.display = 'none';
+
+    var histView = document.getElementById('dashResidentView');
+    if (!histView) {
+      histView = document.createElement('div');
+      histView.id = 'dashResidentView';
+      upper.appendChild(histView);
+    }
+    histView.style.display = 'block';
+    histView.innerHTML =
+      '<div style="padding:16px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+      '<h3 style="margin:0;color:var(--brand)">\u{1F916} \uC0C1\uC8FC \uC5D0\uC774\uC804\uD2B8 (\uC720\uB514) \uB300\uC2DC\uBCF4\uB4DC</h3>' +
+      '<div style="display:flex;gap:6px">' +
+      '<button class="btn btn-xs btn-primary" onclick="Dashboard.showAgentKpiPanel()">\u{1F4CA} \uC5D0\uC774\uC804\uD2B8 KPI</button>' +
+      '<button class="btn btn-xs btn-primary" onclick="Dashboard.showDashboard()">\u2190 \uB300\uC2DC\uBCF4\uB4DC</button>' +
+      '</div></div>' +
+      '<div id="residentKpiCards" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<h4 style="margin:0;color:var(--fg)">\uD65C\uB3D9 \uD788\uC2A4\uD1A0\uB9AC</h4>' +
+      '<div style="display:flex;gap:6px">' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'all\')">\uC804\uCCB4</button>' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'review\')">QA</button>' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'rework\')">\uC7AC\uC791\uC5C5</button>' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'meeting\')">\uD68C\uC758</button>' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'route\')">\uB77C\uC6B0\uD305</button>' +
+      '<button class="btn btn-xs" onclick="Dashboard.filterResident(\'message\')">\uBA54\uC2DC\uC9C0</button>' +
+      '</div></div>' +
+      '<div id="residentStats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>' +
+      '<div id="residentList" style="max-height:50vh;overflow-y:auto"></div>' +
+      '</div>';
+
+    var kpiRes = await API.residentKpi();
+    if (kpiRes.ok) this._renderResidentKpi(kpiRes.kpi);
+    await this._loadResidentHistory('all');
+    var bc = Utils.$('dashBreadcrumb');
+    if (bc) bc.textContent = 'Overview > \uC720\uB514 \uB300\uC2DC\uBCF4\uB4DC';
+  },
+
+  _renderResidentKpi: function(kpi) {
+    var el = Utils.$('residentKpiCards');
+    if (!el) return;
+    var cards = [
+      {label:'QA \uB9AC\uBDF0', val:kpi.qa_total, color:'--chart-green', sub:'\uC624\uB298 '+kpi.today_qa},
+      {label:'QA \uD3C9\uADE0\uC810\uC218', val:kpi.qa_avg_score+'/5', color:'--chart-yellow', sub:'Pass '+kpi.qa_pass_rate+'%'},
+      {label:'Pass/Fail', val:kpi.qa_pass+'/'+kpi.qa_fail, color:kpi.qa_fail>0?'--chart-red':'--chart-green', sub:'\uD569\uACA9\uB960'},
+      {label:'\uC7AC\uC791\uC5C5', val:kpi.reworks, color:'--chart-red', sub:'\uD488\uC9C8 \uAC1C\uC120'},
+      {label:'\uB77C\uC6B0\uD305', val:kpi.routes, color:'--chart-cyan', sub:'\uC5D0\uC774\uC804\uD2B8\u2192\uC720\uB514'},
+      {label:'\uD68C\uC758', val:kpi.meetings, color:'--chart-purple', sub:'\uD300 \uC870\uC728'},
+      {label:'\uBA54\uC2DC\uC9C0', val:kpi.messages, color:'--chart-orange', sub:'\uD300 \uC18C\uD1B5'}
+    ];
+    el.innerHTML = cards.map(function(c){
+      return '<div class="stat-card" style="flex:1;min-width:100px">' +
+        '<div class="stat-accent" style="background:var('+c.color+')"></div>' +
+        '<div class="stat-label">'+c.label+'</div>' +
+        '<div class="stat-value" style="color:var('+c.color+')">'+c.val+'</div>' +
+        '<div class="stat-sub">'+c.sub+'</div></div>';
+    }).join('');
+  },
+
+  _residentFilter: 'all',
+
+  async filterResident(type) {
+    this._residentFilter = type;
+    await this._loadResidentHistory(type);
+  },
+
+  async _loadResidentHistory(type) {
+    var res = await API.residentHistory(300, type);
+    if (!res.ok) return;
+    var statsEl = Utils.$('residentStats');
+    if (statsEl && res.stats) {
+      var s = res.stats;
+      var badges = [
+        {label:'\uC804\uCCB4',val:s.total,color:'--brand'},
+        {label:'QA',val:s.qa,color:'--chart-green'},
+        {label:'\uC7AC\uC791\uC5C5',val:s.rework,color:'--chart-red'},
+        {label:'\uD68C\uC758',val:s.meeting,color:'--chart-purple'},
+        {label:'\uB77C\uC6B0\uD305',val:s.route,color:'--chart-cyan'},
+        {label:'\uBA54\uC2DC\uC9C0',val:s.message,color:'--chart-orange'},
+        {label:'\uD65C\uB3D9',val:s.activity,color:'--chart-blue'}
+      ];
+      statsEl.innerHTML = badges.map(function(b){
+        return '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:var(--fs-xs)">' +
+          '<span style="color:var('+b.color+')">'+b.label+'</span> <span class="fw-bold">'+b.val+'</span></div>';
+      }).join('');
+    }
+    var listEl = Utils.$('residentList');
+    if (!listEl) return;
+    var items = res.history || [];
+    if (!items.length) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">\uD788\uC2A4\uD1A0\uB9AC \uC5C6\uC74C</div>'; return; }
+    var kindMeta = {
+      conversation:{icon:'\u{1F4AC}',color:'var(--cyan)',label:'\uB300\uD654'},
+      review:{icon:'\u{1F50D}',color:'var(--chart-green)',label:'QA'},
+      activity:{icon:'\u{1F4CA}',color:'var(--brand)',label:'\uD65C\uB3D9'},
+      message:{icon:'\u{1F4E8}',color:'var(--chart-orange)',label:'\uBA54\uC2DC\uC9C0'}
+    };
+    listEl.innerHTML = items.map(function(item){
+      var km = kindMeta[item.kind] || {icon:'\u{1F4CC}',color:'var(--muted)',label:item.kind};
+      var scoreHtml = item.score ? ' <span style="color:var(--chart-yellow)">\u2605'+item.score+'</span>' : '';
+      var resultBadge = '';
+      if (item.result==='pass') resultBadge='<span style="background:#1a472a;color:#4ade80;padding:1px 6px;border-radius:3px;font-size:10px">PASS</span>';
+      if (item.result==='fail') resultBadge='<span style="background:#4a1a1a;color:#f87171;padding:1px 6px;border-radius:3px;font-size:10px">FAIL</span>';
+      var ticketHtml = item.ticket_id ? '<span style="color:var(--cyan);font-size:10px">'+Utils.esc(item.ticket_id)+'</span>' : '';
+      return '<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+        '<span>'+km.icon+'</span>' +
+        '<span style="color:'+km.color+';font-size:var(--fs-xs);font-weight:600">'+km.label+'</span>' +
+        '<span style="font-size:10px;color:var(--muted)">'+Utils.esc(item.msg_type||'')+'</span>' +
+        resultBadge+scoreHtml+'</div>' +
+        '<div style="display:flex;gap:8px;align-items:center">'+ticketHtml+
+        '<span style="font-size:10px;color:var(--muted)">'+Utils.timeFmt(item.created_at)+'</span></div></div>' +
+        '<div style="font-size:var(--fs-xs);color:var(--fg);line-height:1.4">'+Utils.esc((item.content||'').substring(0,300))+'</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+Utils.esc(item.from_agent||'')+(item.to_agent?' \u2192 '+Utils.esc(item.to_agent):'')+'</div></div>';
+    }).join('');
+  },
+
+
+  async showAgentKpiPanel() {
+    var upper = Utils.$('dashUpper');
+    if (!upper) return;
+    var kpiView = Utils.$('dashKpiView');
+    var kanbanView = Utils.$('dashKanbanView');
+    var residentView = document.getElementById('dashResidentView');
+    if (kpiView) kpiView.style.display = 'none';
+    if (kanbanView) kanbanView.style.display = 'none';
+    if (residentView) residentView.style.display = 'none';
+
+    var agentView = document.getElementById('dashAgentKpiView');
+    if (!agentView) {
+      agentView = document.createElement('div');
+      agentView.id = 'dashAgentKpiView';
+      upper.appendChild(agentView);
+    }
+    agentView.style.display = 'block';
+    agentView.innerHTML = '<div style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0;color:var(--brand)">📊 에이전트별 KPI</h3><button class="btn btn-xs btn-primary" onclick="Dashboard.showResidentHistory()">← 유디 대시보드</button></div><div id="agentKpiTable" style="overflow-y:auto;max-height:65vh"></div></div>';
+
+    var res = await API.agentsKpi();
+    if (!res.ok) return;
+    var agents = res.agents || [];
+    var tableEl = Utils.$('agentKpiTable');
+    if (!tableEl) return;
+
+    if (agents.length === 0) {
+      tableEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">에이전트 없음</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:var(--fs-xs)">';
+    html += '<thead><tr style="border-bottom:2px solid var(--border)">';
+    html += '<th style="text-align:left;padding:6px">팀</th>';
+    html += '<th style="text-align:left;padding:6px">에이전트</th>';
+    html += '<th style="text-align:left;padding:6px">역할</th>';
+    html += '<th style="text-align:right;padding:6px">티켓</th>';
+    html += '<th style="text-align:right;padding:6px">완료율</th>';
+    html += '<th style="text-align:right;padding:6px">QA점수</th>';
+    html += '<th style="text-align:right;padding:6px">대화</th>';
+    html += '<th style="text-align:right;padding:6px">산출물</th>';
+    html += '<th style="text-align:right;padding:6px">비용</th>';
+    html += '<th style="text-align:center;padding:6px">상태</th>';
+    html += '</tr></thead><tbody>';
+
+    agents.forEach(function(a) {
+      var statusColor = a.status === 'Working' ? 'var(--chart-green)' : a.status === 'Blocked' ? 'var(--chart-red)' : 'var(--muted)';
+      var scoreColor = a.qa_avg_score >= 4 ? 'var(--chart-green)' : a.qa_avg_score >= 3 ? 'var(--chart-yellow)' : 'var(--chart-red)';
+      html += '<tr style="border-bottom:1px solid var(--border)">';
+      html += '<td style="padding:5px;color:var(--cyan)">' + Utils.esc(a.team_name || '') + '</td>';
+      html += '<td style="padding:5px;font-weight:600">' + Utils.esc(a.display_name || a.member_id) + '</td>';
+      html += '<td style="padding:5px;color:var(--muted)">' + Utils.esc(a.role) + '</td>';
+      html += '<td style="padding:5px;text-align:right">' + a.tickets_done + '/' + a.tickets_total + '</td>';
+      html += '<td style="padding:5px;text-align:right"><div style="display:flex;align-items:center;gap:4px;justify-content:flex-end"><div style="width:40px;height:4px;background:var(--border);border-radius:2px"><div style="width:' + a.completion_rate + '%;height:100%;background:var(--chart-green);border-radius:2px"></div></div><span>' + a.completion_rate + '%</span></div></td>';
+      html += '<td style="padding:5px;text-align:right;color:' + scoreColor + '">' + (a.qa_avg_score > 0 ? a.qa_avg_score + '★' : '-') + '</td>';
+      html += '<td style="padding:5px;text-align:right">' + a.conversations + '</td>';
+      html += '<td style="padding:5px;text-align:right">' + a.artifacts + '</td>';
+      html += '<td style="padding:5px;text-align:right;font-family:var(--mono)">$' + a.cost.toFixed(2) + '</td>';
+      html += '<td style="padding:5px;text-align:center"><span style="color:' + statusColor + '">' + Utils.esc(a.status) + '</span></td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    tableEl.innerHTML = html;
+
+    var bc = Utils.$('dashBreadcrumb');
+    if (bc) bc.textContent = 'Overview > 에이전트 KPI';
+  },
+
+  async killZombies() {
+    var res = await API.killZombieMcp();
+    if (res.ok) {
+      alert('Killed ' + (res.killed || 0) + ' zombie MCP processes');
+      this.refresh();
+    } else {
+      alert('Error: ' + (res.error || 'unknown'));
+    }
+  },
+
+  async launchClaude(projectName) {
+    var proj = this._projects.find(function(p) { return p.name === projectName; });
+    if (!proj) return;
+    var res = await API.claudeLaunch({ project_path: proj.path, team_id: '' });
+    if (res.ok) {
+      var term = Utils.$('dashTerminal');
+      if (term) {
+        term.innerHTML = '<div class="terminal-header">' + Utils.esc(projectName) + ' — Claude Code</div>' +
+          '<div class="terminal-info">Session: ' + res.session_id + ' | PID: ' + res.pid + '</div>' +
+          '<div class="terminal-actions">' +
+          '<button class="btn btn-sm btn-danger" onclick="Dashboard.stopClaude(\'' + res.session_id + '\',\'' + Utils.esc(projectName) + '\')">Stop</button>' +
+          '</div>';
+      }
+    } else {
+      alert(res.error || 'Launch failed');
+    }
+  },
+
+  async stopClaude(sessionId, projectName) {
+    await API.claudeStop(sessionId);
+    this.selectProject(projectName);
+  },
+
+  /* ── Telegram 설정 ── */
+
+  async showTelegramSettings() {
+    var config = await API.get('/api/telegram/config');
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'tgModal';
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+    var box = document.createElement('div');
+    box.className = 'modal-box';
+    box.style.maxWidth = '480px';
+
+    var header = document.createElement('div');
+    header.className = 'modal-header';
+    var h3 = document.createElement('h3');
+    h3.textContent = 'Telegram Bot 설정';
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-sm';
+    closeBtn.textContent = '\u2715';
+    closeBtn.addEventListener('click', function() { modal.remove(); });
+    header.appendChild(h3);
+    header.appendChild(closeBtn);
+
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:12px';
+
+    var guide = document.createElement('div');
+    guide.style.cssText = 'font-size:var(--fs-xs);color:var(--muted)';
+    guide.textContent = '1. @BotFather에서 봇 생성 \u2192 토큰 복사  2. 봇에 /start 전송  3. 토큰 입력 후 채팅 감지';
+    body.appendChild(guide);
+
+    var tokenLabel = document.createElement('label');
+    tokenLabel.textContent = 'Bot Token';
+    tokenLabel.style.fontSize = 'var(--fs-sm)';
+    var tokenInput = document.createElement('input');
+    tokenInput.id = 'tgBotToken';
+    tokenInput.className = 'input';
+    tokenInput.placeholder = '123456:ABC-DEF...';
+    body.appendChild(tokenLabel);
+    body.appendChild(tokenInput);
+
+    var chatLabel = document.createElement('label');
+    chatLabel.textContent = 'Chat ID';
+    chatLabel.style.fontSize = 'var(--fs-sm)';
+    var chatRow = document.createElement('div');
+    chatRow.style.cssText = 'display:flex;gap:8px';
+    var chatInput = document.createElement('input');
+    chatInput.id = 'tgChatId';
+    chatInput.className = 'input';
+    chatInput.placeholder = '자동 감지됨';
+    chatInput.value = config.chat_id || '';
+    chatInput.style.flex = '1';
+    var detectBtn = document.createElement('button');
+    detectBtn.className = 'btn btn-sm';
+    detectBtn.textContent = '채팅 감지';
+    detectBtn.addEventListener('click', function() { Dashboard.detectTgChat(); });
+    chatRow.appendChild(chatInput);
+    chatRow.appendChild(detectBtn);
+    body.appendChild(chatLabel);
+    body.appendChild(chatRow);
+
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-sm btn-primary';
+    saveBtn.textContent = '저장';
+    saveBtn.addEventListener('click', function() { Dashboard.saveTgConfig(); });
+    var testBtn = document.createElement('button');
+    testBtn.className = 'btn btn-sm';
+    testBtn.textContent = '테스트';
+    testBtn.addEventListener('click', function() { Dashboard.testTg(); });
+    actions.appendChild(saveBtn);
+    actions.appendChild(testBtn);
+    if (config.enabled) {
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn btn-sm btn-danger';
+      delBtn.textContent = '해제';
+      delBtn.addEventListener('click', function() { Dashboard.deleteTgConfig(); });
+      actions.appendChild(delBtn);
+    }
+    body.appendChild(actions);
+
+    var status = document.createElement('div');
+    status.id = 'tgStatus';
+    status.style.cssText = 'font-size:var(--fs-xs);color:var(--muted)';
+    body.appendChild(status);
+
+    box.appendChild(header);
+    box.appendChild(body);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+  },
+
+  async detectTgChat() {
+    var token = document.getElementById('tgBotToken').value.trim();
+    var st = document.getElementById('tgStatus');
+    st.textContent = '감지 중...';
+    var res = await API.post('/api/telegram/detect', { bot_token: token });
+    if (res.ok) {
+      document.getElementById('tgChatId').value = res.chat_id;
+      st.textContent = '감지 성공: ' + (res.chat_name || res.chat_id);
+    } else {
+      st.textContent = '실패: ' + (res.error || '봇에 /start를 먼저 보내세요');
+    }
+  },
+
+  async saveTgConfig() {
+    var token = document.getElementById('tgBotToken').value.trim();
+    var chatId = document.getElementById('tgChatId').value.trim();
+    var st = document.getElementById('tgStatus');
+    var res = await API.post('/api/telegram/config', { bot_token: token, chat_id: chatId });
+    if (res.ok) {
+      st.textContent = '연동 완료!';
+      st.style.color = 'var(--success)';
+    } else {
+      st.textContent = '오류: ' + (res.error || 'unknown');
+    }
+  },
+
+  async testTg() {
+    var st = document.getElementById('tgStatus');
+    var res = await API.post('/api/telegram/test', {});
+    st.textContent = res.ok ? '테스트 메시지 전송 완료' : '전송 실패';
+  },
+
+  async deleteTgConfig() {
+    await API.del('/api/telegram/config');
+    var modal = document.getElementById('tgModal');
+    if (modal) modal.remove();
+  },
+
+  /* ── 빠른 지시 → 티켓 생성 ── */
+
+  async quickTicket(teamId) {
+    var instruction = prompt('지시 내용을 입력하세요 (티켓으로 생성됩니다):');
+    if (!instruction) return;
+    var lines = instruction.split('\n').filter(function(l) { return l.trim(); });
+    var title = lines[0].substring(0, 80);
+    var desc = lines.length > 1 ? lines.slice(1).join('\n') : '';
+    var res = await API.post('/api/teams/' + teamId + '/tickets', {
+      title: title,
+      description: desc,
+      priority: 'High',
+      status: 'Todo'
+    });
+    if (res.ok !== false) {
+      this.refresh();
+    } else {
+      alert('티켓 생성 실패: ' + (res.error || 'unknown'));
+    }
+  },
+
+  /* ── 설정 통합 패널 ── */
+
+  async showSettingsPanel() {
+    var existing = document.getElementById('settingsModal');
+    if (existing) { existing.classList.add('open'); return; }
+
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay open';
+    modal.id = 'settingsModal';
+    modal.style.cssText = 'z-index:600;align-items:flex-start;padding-top:48px';
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('open'); });
+
+    var box = document.createElement('div');
+    box.style.cssText = [
+      'background:var(--bg-elevated,#1a1d26)',
+      'border:1px solid var(--line,#2a2f3e)',
+      'border-radius:var(--radius-lg,10px)',
+      'width:700px',
+      'max-width:95vw',
+      'max-height:82vh',
+      'overflow:hidden',
+      'display:flex',
+      'flex-direction:column',
+      'box-shadow:0 24px 64px rgba(0,0,0,0.6)'
+    ].join(';');
+
+    /* ── Header ── */
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line,#2a2f3e);flex-shrink:0';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:var(--fs-lg,15px);font-weight:800;letter-spacing:-0.3px';
+    title.textContent = '⚙️ 서버 설정';
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-sm';
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', function() { modal.classList.remove('open'); });
+    hdr.appendChild(title);
+    hdr.appendChild(closeBtn);
+    box.appendChild(hdr);
+
+    /* ── Tab bar ── */
+    var tabBar = document.createElement('div');
+    tabBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--line,#2a2f3e);flex-shrink:0;padding:0 4px;background:var(--bg-sunken,#13151c)';
+    var panelWrap = document.createElement('div');
+    panelWrap.style.cssText = 'flex:1;overflow-y:auto;padding:20px';
+
+    var tabs = [
+      {id:'tokens', label:'🔑 토큰'},
+      {id:'telegram', label:'📱 Telegram'},
+      {id:'projects', label:'📁 프로젝트'},
+      {id:'agent', label:'🤖 에이전트'},
+      {id:'usage', label:'📊 사용량'}
+    ];
+    var panels = {};
+    var tabBtns = {};
+
+    tabs.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.style.cssText = [
+        'background:none',
+        'border:none',
+        'border-bottom:2px solid transparent',
+        'color:var(--muted,#6b7a90)',
+        'padding:10px 14px',
+        'font-size:var(--fs-xs,11px)',
+        'font-weight:600',
+        'cursor:pointer',
+        'transition:all 0.15s',
+        'white-space:nowrap'
+      ].join(';');
+      btn.textContent = t.label;
+
+      var panel = document.createElement('div');
+      panel.style.display = 'none';
+      panels[t.id] = panel;
+      tabBtns[t.id] = btn;
+      panelWrap.appendChild(panel);
+
+      btn.addEventListener('click', function() {
+        Object.values(panels).forEach(function(p) { p.style.display = 'none'; });
+        Object.values(tabBtns).forEach(function(b) {
+          b.style.borderBottomColor = 'transparent';
+          b.style.color = 'var(--muted,#6b7a90)';
+        });
+        panel.style.display = 'block';
+        btn.style.borderBottomColor = 'var(--brand,#1B96FF)';
+        btn.style.color = 'var(--text,#ECEDEE)';
+      });
+      tabBar.appendChild(btn);
+    });
+
+    box.appendChild(tabBar);
+    box.appendChild(panelWrap);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    /* Load all tabs */
+    await Promise.all([
+      this._loadTokensTab(panels.tokens),
+      this._loadTelegramTab(panels.telegram),
+      this._loadProjectsTab(panels.projects),
+      this._loadAgentTab(panels.agent),
+      this._loadUsageTab(panels.usage)
+    ]);
+
+    /* Activate first tab */
+    tabBtns.tokens.click();
+  },
+
+  /* ── Settings helpers ── */
+
+  _sLabel(text) {
+    var el = document.createElement('div');
+    el.style.cssText = 'font-size:var(--fs-xs,11px);color:var(--muted,#6b7a90);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px';
+    el.textContent = text;
+    return el;
+  },
+
+  _sInput(placeholder, value) {
+    var inp = document.createElement('input');
+    inp.style.cssText = [
+      'width:100%',
+      'background:var(--bg,#0d1117)',
+      'border:1px solid var(--line,#2a2f3e)',
+      'color:var(--text,#ECEDEE)',
+      'border-radius:var(--radius-sm,5px)',
+      'padding:7px 10px',
+      'font-size:var(--fs-sm,12px)',
+      'outline:none',
+      'font-family:var(--mono,monospace)'
+    ].join(';');
+    inp.placeholder = placeholder || '';
+    inp.value = value || '';
+    inp.addEventListener('focus', function() { this.style.borderColor = 'var(--brand,#1B96FF)'; });
+    inp.addEventListener('blur', function() { this.style.borderColor = 'var(--line,#2a2f3e)'; });
+    return inp;
+  },
+
+  _sBtn(label, cls) {
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-sm' + (cls ? ' ' + cls : '');
+    btn.textContent = label;
+    return btn;
+  },
+
+  _sStatus(text, ok) {
+    var el = document.createElement('div');
+    el.style.cssText = 'font-size:var(--fs-xs,11px);margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm,5px);background:' + (ok ? 'var(--green-bg,#0a2b1a)' : 'var(--bg-sunken,#13151c)');
+    el.style.color = ok ? 'var(--green,#4BCA81)' : 'var(--muted,#6b7a90)';
+    el.textContent = text;
+    return el;
+  },
+
+  async _loadTokensTab(panel) {
+    var self = this;
+    async function reload() {
+      panel.innerHTML = '';
+      var res = await API.get('/api/tokens');
+      var tokens = Array.isArray(res) ? res : (res.tokens || []);
+
+      panel.appendChild(self._sLabel('발급된 토큰 (' + tokens.length + ')'));
+
+      if (!tokens.length) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--muted);font-size:var(--fs-sm);padding:12px 0';
+        empty.textContent = '토큰 없음';
+        panel.appendChild(empty);
+      } else {
+        var table = document.createElement('table');
+        table.style.cssText = 'width:100%;font-size:var(--fs-sm,12px);border-collapse:collapse';
+        ['이름','토큰','상태',''].forEach(function(h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          th.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:1px solid var(--line,#2a2f3e);font-size:var(--fs-2xs,10px);color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700';
+          table.appendChild(th);
+        });
+        tokens.forEach(function(t) {
+          var tr = document.createElement('tr');
+          [
+            { text: t.name || '-', mono: false },
+            { text: t.token_display || t.display || '••••', mono: true },
+            { text: t.is_active ? '✅ Active' : '❌ Revoked', mono: false }
+          ].forEach(function(cell) {
+            var td = document.createElement('td');
+            td.textContent = cell.text;
+            td.style.cssText = 'padding:7px 8px;border-bottom:1px solid var(--line,#2a2f3e)' + (cell.mono ? ';font-family:var(--mono,monospace);font-size:var(--fs-xs,11px)' : '');
+            tr.appendChild(td);
+          });
+          var actionTd = document.createElement('td');
+          actionTd.style.cssText = 'padding:4px 8px;border-bottom:1px solid var(--line,#2a2f3e)';
+          var delBtn = self._sBtn('삭제', 'btn-danger');
+          delBtn.addEventListener('click', async function() {
+            if (!confirm('토큰을 삭제하시겠습니까?')) return;
+            await API.del('/api/tokens/' + (t.token_id || t.id));
+            reload();
+          });
+          actionTd.appendChild(delBtn);
+          tr.appendChild(actionTd);
+          table.appendChild(tr);
+        });
+        panel.appendChild(table);
+      }
+
+      /* 새 토큰 생성 */
+      panel.appendChild(self._sLabel('새 토큰 생성'));
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px';
+      var nameInp = self._sInput('토큰 이름 (예: my-project)', '');
+      nameInp.style.flex = '1';
+      var createBtn = self._sBtn('생성', 'btn-primary');
+      row.appendChild(nameInp);
+      row.appendChild(createBtn);
+      panel.appendChild(row);
+
+      var resultDiv = document.createElement('div');
+      resultDiv.style.cssText = 'display:none;margin-top:10px;padding:10px 12px;background:var(--bg-sunken,#13151c);border:1px solid var(--green,#4BCA81);border-radius:var(--radius-sm,5px)';
+      panel.appendChild(resultDiv);
+
+      createBtn.addEventListener('click', async function() {
+        var name = nameInp.value.trim();
+        if (!name) { nameInp.style.borderColor = 'var(--red)'; return; }
+        createBtn.disabled = true;
+        createBtn.textContent = '생성 중...';
+        var r = await API.post('/api/tokens', {name: name, permissions: 'agent'});
+        createBtn.disabled = false;
+        createBtn.textContent = '생성';
+        if (r.token_key || r.token) {
+          var key = r.token_key || r.token;
+          var escapedKey = Utils.esc(key);
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = '<div style="font-size:var(--fs-xs);color:var(--green)">\u2705 토큰 생성 완료! 지금 바로 복사하세요 (다시 표시 불가)</div>'
+            + '<div id="tokenCopyBox" style="font-family:var(--mono);font-size:var(--fs-sm);margin-top:6px;padding:8px;background:var(--bg);border-radius:4px;color:var(--text);cursor:pointer;word-break:break-all">' + escapedKey + '</div>'
+            + '<div style="font-size:var(--fs-2xs);color:var(--muted);margin-top:4px">클릭하여 복사</div>';
+          var copyBox = resultDiv.querySelector('#tokenCopyBox');
+          if (copyBox) copyBox.addEventListener('click', function() {
+            navigator.clipboard.writeText(key).then(function() { copyBox.style.background = 'var(--green-bg)'; });
+          });
+          nameInp.value = '';
+          setTimeout(reload, 1500);
+        } else {
+          resultDiv.style.display = 'block';
+          resultDiv.style.borderColor = 'var(--red)';
+          resultDiv.textContent = '오류: ' + (r.error || '알 수 없는 오류');
+        }
+      });
+    }
+    await reload();
+  },
+
+  async _loadTelegramTab(panel) {
+    var self = this;
+    var config = await API.get('/api/telegram/config');
+
+    panel.appendChild(this._sLabel('설정 방법'));
+    var guide = document.createElement('ol');
+    guide.style.cssText = 'font-size:var(--fs-xs,11px);color:var(--muted);padding-left:18px;line-height:1.8';
+    ['@BotFather에서 봇 생성 → 토큰 복사', '봇에게 /start 전송', '토큰 입력 후 "채팅 감지" 클릭'].forEach(function(s) {
+      var li = document.createElement('li'); li.textContent = s; guide.appendChild(li);
+    });
+    panel.appendChild(guide);
+
+    panel.appendChild(this._sLabel('Bot Token'));
+    var tokenInp = this._sInput('123456:ABC-DEF...', '');
+    panel.appendChild(tokenInp);
+
+    panel.appendChild(this._sLabel('Chat ID'));
+    var chatInp = this._sInput('자동 감지됨', config.chat_id || '');
+    panel.appendChild(chatInp);
+
+    var statusEl = this._sStatus(config.enabled ? '✅ 연동됨 (Chat: ' + (config.chat_name || config.chat_id || '-') + ')' : '❌ 미연동', config.enabled);
+    panel.appendChild(statusEl);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap';
+
+    var detectBtn = this._sBtn('📡 채팅 감지');
+    detectBtn.addEventListener('click', async function() {
+      var t = tokenInp.value.trim();
+      if (!t) { tokenInp.style.borderColor = 'var(--red)'; return; }
+      statusEl.textContent = '감지 중...';
+      var r = await API.post('/api/telegram/detect', {bot_token: t});
+      if (r.ok) { chatInp.value = r.chat_id || ''; statusEl.textContent = '감지됨: ' + (r.chat_name || r.chat_id); statusEl.style.color = 'var(--green)'; }
+      else { statusEl.textContent = '실패: ' + (r.error || '채팅 없음'); statusEl.style.color = 'var(--red)'; }
+    });
+
+    var saveBtn = this._sBtn('💾 저장', 'btn-primary');
+    saveBtn.addEventListener('click', async function() {
+      var t = tokenInp.value.trim();
+      var c = chatInp.value.trim();
+      var r = await API.post('/api/telegram/config', {bot_token: t, chat_id: c});
+      statusEl.textContent = r.ok ? '✅ 저장 완료!' : '오류: ' + (r.error || '');
+      statusEl.style.color = r.ok ? 'var(--green)' : 'var(--red)';
+    });
+
+    var testBtn = this._sBtn('🔔 테스트 발송');
+    testBtn.addEventListener('click', async function() {
+      var r = await API.post('/api/telegram/test', {});
+      statusEl.textContent = r.ok ? '✅ 전송 완료' : '❌ 전송 실패';
+    });
+
+    btnRow.appendChild(detectBtn);
+    btnRow.appendChild(saveBtn);
+    btnRow.appendChild(testBtn);
+    panel.appendChild(btnRow);
+  },
+
+  async _loadProjectsTab(panel) {
+    var self = this;
+    async function reload() {
+      panel.innerHTML = '';
+      var res = await API.get('/api/github/projects');
+      var projects = res.projects || [];
+
+      panel.appendChild(self._sLabel('등록된 프로젝트 (' + projects.length + ')'));
+
+      var info = document.createElement('div');
+      info.style.cssText = 'font-size:var(--fs-xs);color:var(--muted);margin-bottom:12px';
+      info.textContent = '~/github/ 디렉토리를 자동 스캔. 별명(alias) 편집 가능.';
+      panel.appendChild(info);
+
+      projects.forEach(function(p) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line,#2a2f3e)';
+
+        var statusDot = document.createElement('span');
+        statusDot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + (p.exists ? 'var(--green,#4BCA81)' : 'var(--red,#EA001E)');
+        row.appendChild(statusDot);
+
+        var gitBadge = document.createElement('span');
+        gitBadge.style.cssText = 'font-size:9px;padding:1px 5px;border-radius:3px;background:' + (p.is_git ? 'var(--brand-bg)' : 'var(--bg-sunken)') + ';color:' + (p.is_git ? 'var(--brand-light)' : 'var(--muted)') + ';font-weight:700;flex-shrink:0';
+        gitBadge.textContent = p.is_git ? 'git' : 'dir';
+        row.appendChild(gitBadge);
+
+        var name = document.createElement('span');
+        name.style.cssText = 'font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+        name.textContent = p.name;
+        row.appendChild(name);
+
+        var aliasInp = document.createElement('input');
+        aliasInp.style.cssText = 'background:var(--bg,#0d1117);border:1px solid var(--line);color:var(--text);border-radius:3px;padding:3px 6px;font-size:var(--fs-xs);width:100px;outline:none';
+        aliasInp.placeholder = '별명';
+        aliasInp.value = p.alias || '';
+        row.appendChild(aliasInp);
+
+        if (p.team_count > 0) {
+          var teamBadge = document.createElement('span');
+          teamBadge.style.cssText = 'font-size:9px;padding:1px 6px;border-radius:8px;background:var(--brand-bg);color:var(--brand-light);font-weight:700;white-space:nowrap';
+          teamBadge.textContent = p.team_count + ' 팀';
+          row.appendChild(teamBadge);
+        }
+
+        var saveBtn = self._sBtn('저장');
+        saveBtn.style.cssText += ';padding:2px 8px;font-size:10px';
+        saveBtn.addEventListener('click', async function() {
+          var alias = aliasInp.value.trim();
+          var r = await API.post('/api/projects', {alias: alias || p.name, name: p.name, path: p.path});
+          if (r.ok) { saveBtn.textContent = '✓'; setTimeout(function() { saveBtn.textContent = '저장'; }, 1500); }
+          else saveBtn.textContent = '!';
+        });
+        row.appendChild(saveBtn);
+
+        panel.appendChild(row);
+      });
+    }
+    await reload();
+  },
+
+  async _loadAgentTab(panel) {
+    var self = this;
+    var res = await API.get('/api/agent/status');
+    var running = res.ok && res.running;
+
+    panel.appendChild(this._sLabel('상주 에이전트 (유디)'));
+
+    var statusCard = document.createElement('div');
+    statusCard.style.cssText = 'padding:14px 16px;border-radius:var(--radius-md);border:1px solid var(--line);margin-bottom:14px;display:flex;align-items:center;gap:12px';
+    var dot = document.createElement('span');
+    dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + (running ? 'var(--green)' : 'var(--muted)') + ';flex-shrink:0';
+    if (running) dot.style.animation = 'pulse-dot 1.5s infinite';
+    var statusText = document.createElement('span');
+    statusText.style.cssText = 'font-weight:700;font-size:var(--fs-sm)';
+    statusText.textContent = running ? '실행 중' : '중지됨';
+    var desc = document.createElement('span');
+    desc.style.cssText = 'font-size:var(--fs-xs);color:var(--muted);flex:1';
+    desc.textContent = 'Telegram 명령 수신 / 미할당 티켓 자동 스폰 (15초 폴링)';
+    statusCard.appendChild(dot);
+    statusCard.appendChild(statusText);
+    statusCard.appendChild(desc);
+    panel.appendChild(statusCard);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px';
+    var startBtn = this._sBtn('▶ 시작', 'btn-primary');
+    startBtn.disabled = running;
+    var stopBtn = this._sBtn('■ 중지', 'btn-danger');
+    stopBtn.disabled = !running;
+
+    startBtn.addEventListener('click', async function() {
+      await API.post('/api/agent/start', {});
+      dot.style.background = 'var(--green)';
+      dot.style.animation = 'pulse-dot 1.5s infinite';
+      statusText.textContent = '시작 중...';
+      startBtn.disabled = true; stopBtn.disabled = false;
+    });
+    stopBtn.addEventListener('click', async function() {
+      await API.post('/api/agent/stop', {});
+      dot.style.background = 'var(--muted)';
+      dot.style.animation = 'none';
+      statusText.textContent = '중지됨';
+      startBtn.disabled = false; stopBtn.disabled = true;
+    });
+    btnRow.appendChild(startBtn);
+    btnRow.appendChild(stopBtn);
+    panel.appendChild(btnRow);
+
+    /* 진행 중 작업 */
+    var jobsRes = await API.get('/api/orchestrate/jobs');
+    if (jobsRes.ok && jobsRes.jobs && jobsRes.jobs.length) {
+      panel.appendChild(this._sLabel('진행 중 작업 (' + jobsRes.jobs.length + ')'));
+      jobsRes.jobs.forEach(function(j) {
+        var row = document.createElement('div');
+        row.style.cssText = 'padding:6px 0;font-size:var(--fs-sm);display:flex;justify-content:space-between;border-bottom:1px solid var(--line)';
+        var left = document.createElement('span');
+        left.textContent = j.team_name + ' (' + j.status + ')';
+        var right = document.createElement('span');
+        right.style.cssText = 'color:var(--muted);font-size:var(--fs-xs)';
+        right.textContent = j.ticket_count + '티켓 / ' + j.session_count + '세션';
+        row.appendChild(left); row.appendChild(right);
+        panel.appendChild(row);
+      });
+    }
+
+    /* 좀비 MCP */
+    panel.appendChild(this._sLabel('MCP 프로세스'));
+    var zombieBtn = this._sBtn('☠ 좀비 MCP 정리', 'btn-danger');
+    zombieBtn.style.marginTop = '4px';
+    zombieBtn.addEventListener('click', async function() {
+      var r = await API.killZombieMcp();
+      var msg = r.ok ? ('정리 완료: ' + (r.killed || 0) + '개 종료') : '정리 실패';
+      var s = self._sStatus(msg, r.ok);
+      zombieBtn.parentNode.insertBefore(s, zombieBtn.nextSibling);
+    });
+    panel.appendChild(zombieBtn);
+  },
+
+  async _loadUsageTab(panel) {
+    panel.appendChild(this._sLabel('전체 사용량'));
+
+    var globalRes = await API.usageGlobal();
+    if (globalRes.ok) {
+      var total = globalRes.total || {};
+      var today = globalRes.today || {};
+      var grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px';
+      [
+        { label: '전체 비용', val: '$' + (total.total_cost || 0).toFixed(4) },
+        { label: '오늘 비용', val: '$' + (today.total_cost || 0).toFixed(4) },
+        { label: '전체 입력 토큰', val: (total.total_input || 0).toLocaleString() }
+      ].forEach(function(item) {
+        var card = document.createElement('div');
+        card.style.cssText = 'padding:10px 12px;background:var(--bg,#0d1117);border:1px solid var(--line);border-radius:var(--radius-sm)';
+        card.innerHTML = '<div style="font-size:var(--fs-xs);color:var(--muted);margin-bottom:4px">' + item.label + '</div>'
+          + '<div style="font-size:var(--fs-lg);font-weight:800;font-family:var(--mono);color:var(--brand-light)">' + item.val + '</div>';
+        grid.appendChild(card);
+      });
+      panel.appendChild(grid);
+    }
+
+    panel.appendChild(this._sLabel('팀별 사용량'));
+
+    try {
+      var teams = await API.get('/api/teams');
+      var teamList = Array.isArray(teams) ? teams : (teams.teams || []);
+      var hasData = false;
+      for (var i = 0; i < Math.min(teamList.length, 15); i++) {
+        var t = teamList[i];
+        var usageRes = await API.get('/api/teams/' + t.team_id + '/usage');
+        if (usageRes.ok && usageRes.total_cost > 0) {
+          hasData = true;
+          var row = document.createElement('div');
+          row.style.cssText = 'padding:6px 0;font-size:var(--fs-sm);display:flex;justify-content:space-between;border-bottom:1px solid var(--line)';
+          var left = document.createElement('span');
+          left.textContent = t.name;
+          left.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0';
+          var right = document.createElement('span');
+          right.style.cssText = 'font-family:var(--mono);font-size:var(--fs-xs);color:var(--green);flex-shrink:0';
+          right.textContent = '$' + (usageRes.total_cost || 0).toFixed(4);
+          row.appendChild(left); row.appendChild(right);
+          panel.appendChild(row);
+        }
+      }
+      if (!hasData) {
+        var noData = document.createElement('div');
+        noData.style.cssText = 'padding:20px;text-align:center;color:var(--muted);font-size:var(--fs-sm)';
+        noData.textContent = '아직 기록된 사용량 데이터가 없습니다.';
+        panel.appendChild(noData);
+      }
+    } catch(e) {}
+  }
+};

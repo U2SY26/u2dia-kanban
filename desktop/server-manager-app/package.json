@@ -1,0 +1,58 @@
+{
+  "name": "u2dia-server-manager",
+  "version": "1.1.0",
+  "description": "U2DIA AI SERVER AGENT — 서버 매니저",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^41.0.3",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.u2dia.server-manager",
+    "productName": "U2DIA Server Manager",
+    "directories": {
+      "output": "../../release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "../assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "U2DIA Server Manager"
+    },
+    "extraResources": [
+      {
+        "from": "../../server.py",
+        "to": "server.py"
+      },
+      {
+        "from": "../../web",
+        "to": "web"
+      },
+      {
+        "from": "../assets",
+        "to": "assets"
+      }
+    ],
+    "publish": null,
+    "linux": {
+      "target": "AppImage",
+      "icon": "../assets/icon.png"
+    },
+    "files": [
+      "**/*",
+      {
+        "from": "../shared",
+        "to": "shared"
+      }
+    ]
+  }
+}
