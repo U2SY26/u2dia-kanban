@@ -110,26 +110,28 @@ const HomeView = {
       '<span class="home-welcome__date">' + new Date().toISOString().slice(0,10) + '</span>';
   },
 
-  // \ube44\uc6a9\u00b7\uc0ac\uc6a9\ub7c9 \uc694\uc57d \uce74\ub4dc (\uae30\uc874 \uc720\ub514 \uc9c8\ubb38/\ub85c\uadf8/\uc911\ub2e8 \ubc84\ud2bc \u2192 \uc758\ubbf8\uc788\ub294 \uc9c0\ud45c\ub85c \uad50\uccb4)
+  // \ube44\uc6a9\u00b7\uc0ac\uc6a9\ub7c9 \u2014 \uc5d4\ud130\ud504\ub77c\uc774\uc988 BI: KPI \uc2a4\ud0dd + 13\uac1c\uc6d4 \ucd94\uc774(area) + \ube44\uc6a9\uad6c\uc131(donut)
   async _renderYudi() {
     const el = document.getElementById('homeYudiCard');
     if (!el) return;
-    let billLife = {}, billMonth = null, prevMonth = null, tok = {}, rate = 1507;
+    let billLife = {}, months = [], tok = {}, rate = 1507;
     try {
       const rb = await API.billingLifetime();
       if (rb && rb.ok) { billLife = rb.lifetime || {}; rate = rb.krw_rate || rate; }
     } catch(e) {}
     try {
       const rm = await API.billingMonthly();
-      if (rm && rm.ok) { const ms = rm.months || []; billMonth = ms[ms.length-1]; prevMonth = ms[ms.length-2]; }
+      if (rm && rm.ok) months = rm.months || [];
     } catch(e) {}
     try {
       const rt = await API.billingTokens('sonnet');
       if (rt && rt.ok) tok = rt;
     } catch(e) {}
 
+    const billMonth = months.length ? months[months.length-1] : null;
+    const prevMonth = months.length>1 ? months[months.length-2] : null;
+
     const usd = (n) => '$' + Number(n||0).toLocaleString('en-US', { maximumFractionDigits: 0 });
-    const won = (n) => '\u20a9' + Math.round(Number(n||0)).toLocaleString('ko-KR');
     const wonShort = (n) => { const v=Math.round(Number(n||0)); return v>=1e8 ? (v/1e8).toFixed(2).replace(/\.?0+$/,'')+'\uc5b5' : v>=1e4 ? Math.round(v/1e4).toLocaleString('ko-KR')+'\ub9cc' : '\u20a9'+v.toLocaleString('ko-KR'); };
     const tk = (n) => { const v=Number(n||0); return v>=1e9 ? (v/1e9).toFixed(1)+'B' : v>=1e6 ? (v/1e6).toFixed(0)+'M' : v.toLocaleString('en-US'); };
 
@@ -139,14 +141,43 @@ const HomeView = {
     const lifeKrw = billLife.lifetime_paid_krw != null ? billLife.lifetime_paid_krw : life*rate;
     const estTok = Number(tok.lifetime_est_tokens||0);
     const addonUsd = Number(billLife.lifetime_addon_usd||0);
+    const subUsd = Number(billLife.lifetime_subscription_usd||0);
+    const refundUsd = Number(billLife.lifetime_refunded_usd||0);
 
     // \uc804\uc6d4\ub300\ube44
     let delta = '';
     if (billMonth && prevMonth && Number(prevMonth.total_paid_usd)>0) {
       const pct = ((mtd - Number(prevMonth.total_paid_usd))/Number(prevMonth.total_paid_usd))*100;
       const up = pct>=0;
-      delta = '<span style="color:'+(up?'var(--red-light)':'var(--green)')+';font-weight:600">'+(up?'\u25b2':'\u25bc')+' '+Math.abs(pct).toFixed(0)+'%</span>';
+      delta = '<span style="color:'+(up?'var(--red-light)':'var(--green)')+';font-weight:700"> '+(up?'\u25b2':'\u25bc')+' '+Math.abs(pct).toFixed(0)+'%</span>';
     }
+
+    // 13\uac1c\uc6d4 \uacb0\uc81c \ucd94\uc774 (area)
+    const tsPts = months.map(m => ({ x: String(m.month).slice(2), y: Number(m.total_paid_usd||0) }));
+    const trendSvg = (typeof SvgCharts!=='undefined' && tsPts.length>1)
+      ? SvgCharts.timeseries(tsPts, { w: 580, h: 188, stroke:'var(--chart-blue)', fmt: SvgCharts.fmt.usd })
+      : '<div class="u-empty"><div class="u-empty__desc">\ucd94\uc774 \ub370\uc774\ud130 \uc5c6\uc74c</div></div>';
+
+    // \ube44\uc6a9 \uad6c\uc131 (donut) \u2014 \uc560\ub4dc\uc628 vs \uad6c\ub3c5
+    const donutSvg = (typeof SvgCharts!=='undefined')
+      ? SvgCharts.donut([
+          { label:'\uc560\ub4dc\uc628 \ud06c\ub808\ub527', value: addonUsd, color:'var(--chart-green)' },
+          { label:'\uad6c\ub3c5(MAX)', value: subUsd, color:'var(--chart-blue)' }
+        ], { size: 158, hole: 0.64 })
+      : '';
+    const legend =
+      '<div class="home-donut-legend">' +
+      '  <div><i style="background:var(--chart-green)"></i>\uc560\ub4dc\uc628 \ud06c\ub808\ub527 <b>' + usd(addonUsd) + '</b></div>' +
+      '  <div><i style="background:var(--chart-blue)"></i>\uad6c\ub3c5(MAX) <b>' + usd(subUsd) + '</b></div>' +
+      (refundUsd>0 ? '  <div><i style="background:var(--muted)"></i>\ud658\ubd88 <b>-' + usd(refundUsd) + '</b></div>' : '') +
+      '</div>';
+
+    const kpi = (label, value, sub, accent) =>
+      '<div class="home-cost' + (accent?' home-cost--accent':'') + '" onclick="Router.navigate(\'#/billing\')">' +
+      '  <div class="home-cost__label">' + label + '</div>' +
+      '  <div class="home-cost__value' + (accent?' home-cost__value--accent':'') + '">' + value + '</div>' +
+      '  <div class="home-cost__sub">' + sub + '</div>' +
+      '</div>';
 
     el.innerHTML =
       '<div class="u-panel__header">' +
@@ -154,26 +185,21 @@ const HomeView = {
       '  <button class="u-btn u-btn--sm u-btn--ghost" onclick="Router.navigate(\'#/billing\')">\uc790\uc138\ud788 \u203a</button>' +
       '</div>' +
       '<div class="u-panel__body">' +
-      '  <div class="home-cost-grid">' +
-      '    <div class="home-cost" onclick="Router.navigate(\'#/billing\')">' +
-      '      <div class="home-cost__label">\uc774\ubc88\ub2ec \ube44\uc6a9</div>' +
-      '      <div class="home-cost__value">' + wonShort(mtdKrw) + '</div>' +
-      '      <div class="home-cost__sub">' + usd(mtd) + ' ' + delta + '</div>' +
+      '  <div class="home-cost-layout">' +
+      '    <div class="home-cost-kpis">' +
+            kpi('\uc774\ubc88\ub2ec \ube44\uc6a9', wonShort(mtdKrw), usd(mtd) + delta) +
+            kpi('\ub204\uc801 \uacb0\uc81c', wonShort(lifeKrw), usd(life) + ' \u00b7 ' + (billLife.active_months||0) + '\uac1c\uc6d4') +
+            kpi('\ucd94\uc815 \ud1a0\ud070', tk(estTok), '\uc560\ub4dc\uc628 ' + usd(addonUsd) + ' \uae30\uc900', true) +
+            kpi('\uc560\ub4dc\uc628 \ud06c\ub808\ub527', wonShort(addonUsd*rate), usd(addonUsd) + ' \ub204\uc801') +
       '    </div>' +
-      '    <div class="home-cost" onclick="Router.navigate(\'#/billing\')">' +
-      '      <div class="home-cost__label">\ub204\uc801 \uacb0\uc81c</div>' +
-      '      <div class="home-cost__value">' + wonShort(lifeKrw) + '</div>' +
-      '      <div class="home-cost__sub">' + usd(life) + ' \u00b7 ' + (billLife.active_months||0) + '\uac1c\uc6d4</div>' +
+      '    <div class="home-cost-chart">' +
+      '      <div class="home-chart__cap"><span>\uc6d4\ubcc4 \uacb0\uc81c \ucd94\uc774</span><span>USD \u00b7 ' + months.length + '\uac1c\uc6d4</span></div>' +
+      '      <div class="home-chart-body">' + trendSvg + '</div>' +
       '    </div>' +
-      '    <div class="home-cost" onclick="Router.navigate(\'#/billing\')">' +
-      '      <div class="home-cost__label">\ucd94\uc815 \ud1a0\ud070</div>' +
-      '      <div class="home-cost__value home-cost__value--accent">' + tk(estTok) + '</div>' +
-      '      <div class="home-cost__sub">\uc560\ub4dc\uc628 ' + usd(addonUsd) + ' \uae30\uc900</div>' +
-      '    </div>' +
-      '    <div class="home-cost" onclick="Router.navigate(\'#/billing\')">' +
-      '      <div class="home-cost__label">\uc560\ub4dc\uc628 \ud06c\ub808\ub527</div>' +
-      '      <div class="home-cost__value">' + wonShort(addonUsd * rate) + '</div>' +
-      '      <div class="home-cost__sub">' + usd(addonUsd) + ' \ub204\uc801 \ucda9\uc804</div>' +
+      '    <div class="home-cost-donut">' +
+      '      <div class="home-chart__cap"><span>\ube44\uc6a9 \uad6c\uc131</span></div>' +
+      '      <div class="home-donut-wrap">' + donutSvg + '</div>' +
+            legend +
       '    </div>' +
       '  </div>' +
       '</div>';
@@ -191,20 +217,32 @@ const HomeView = {
 
     // GPU (Brev / RTX) \u2014 system/metrics \uc6b0\uc120, health \ud3f4\ubc31
     const gpuName = m.gpu_name || 'GPU';
-    const gpuUtil = (m.gpu_util != null ? m.gpu_util : (hg.util_pct || 0));
+    const gpuUtil = Math.round(m.gpu_util != null ? m.gpu_util : (hg.util_pct || 0));
     const gpuTemp = (m.gpu_temp != null ? m.gpu_temp : null);
     const vramUsed = (m.gpu_vram_used_mb != null ? m.gpu_vram_used_mb : (hg.vram_used_mb || 0));
     const vramTotal = (m.gpu_vram_total_mb != null ? m.gpu_vram_total_mb : (hg.vram_total_mb || 0));
     const vramPct = vramTotal > 0 ? Math.round(vramUsed / vramTotal * 100) : (hg.vram_pct || 0);
-    const cpu = m.cpu_percent != null ? m.cpu_percent : 0;
-    const ramPct = m.memory_percent != null ? m.memory_percent : 0;
+    const cpu = Math.round(m.cpu_percent != null ? m.cpu_percent : 0);
+    const ramPct = Math.round(m.memory_percent != null ? m.memory_percent : 0);
     const ramUsed = m.memory_used_mb || 0, ramTotal = m.memory_total_mb || 0;
     const svModel = (h.supervisor_model || '').replace('ollama:', '');
     const sessions = h.active_sessions || 0;
 
-    const barCls = (p) => p >= 90 ? 'home-metric__bar--danger' : p >= 75 ? 'home-metric__bar--warn' : 'home-metric__bar--ok';
-    const bar = (p) => '<div class="home-metric__bar"><span class="' + barCls(p) + '" style="width:' + Math.min(100,Math.max(0,p)) + '%"></span></div>';
+    // \uc2e4\uc2dc\uac04 \ucd94\uc138 \ubc84\ud37c (5\ucd08 \ud3f4\ub9c1\ub9c8\ub2e4 \ub204\uc801, \ucd5c\uadfc 48\uc0d8\ud50c \u2248 4\ubd84)
+    if (!this._gpuHist) this._gpuHist = [];
+    this._gpuHist.push(gpuUtil);
+    if (this._gpuHist.length > 48) this._gpuHist.shift();
+
     const now = new Date().toTimeString().slice(0,8);
+    const gauge = (val, name, sub) =>
+      '<div class="home-gauge">' +
+        (typeof SvgCharts!=='undefined' ? SvgCharts.gauge(val, { size: 116, thresholds:[60,85] }) : (val+'%')) +
+        '<div class="home-gauge__name">' + name + '</div>' +
+        '<div class="home-gauge__sub">' + sub + '</div>' +
+      '</div>';
+    const sparkSvg = (this._gpuHist.length > 1 && typeof SvgCharts!=='undefined')
+      ? SvgCharts.sparkline(this._gpuHist, { w: 560, h: 30, stroke:'var(--chart-cyan)' })
+      : '';
 
     el.innerHTML =
       '<div class="u-panel__header">' +
@@ -212,29 +250,20 @@ const HomeView = {
       '  <span class="u-badge u-badge--info">live \u00b7 ' + now + '</span>' +
       '</div>' +
       '<div class="u-panel__body">' +
-      '  <div class="home-yudi-metrics">' +
-      '    <div class="home-metric">' +
-      '      <div class="home-metric__label">GPU \u00b7 ' + Utils.esc(gpuName.replace('NVIDIA GeForce ','')) + '</div>' +
-      '      <div class="home-metric__value">' + gpuUtil + '<small>%</small>' + (gpuTemp!=null ? ' <small style="color:var(--muted)">'+gpuTemp+'\u00b0</small>' : '') + '</div>' +
-             bar(gpuUtil) +
-      '      <div class="home-metric__sub">VRAM ' + (Math.round(vramUsed/1024)) + '/' + (Math.round(vramTotal/1024)) + 'GB \u00b7 ' + vramPct + '%</div>' +
-      '    </div>' +
-      '    <div class="home-metric">' +
-      '      <div class="home-metric__label">CPU \u00b7 RAM</div>' +
-      '      <div class="home-metric__value">' + cpu + '<small>%</small></div>' +
-             bar(cpu) +
-      '      <div class="home-metric__sub">RAM ' + Math.round(ramUsed/1024) + '/' + Math.round(ramTotal/1024) + 'GB \u00b7 ' + ramPct + '%</div>' +
-      '    </div>' +
-      '    <div class="home-metric">' +
-      '      <div class="home-metric__label">Supervisor</div>' +
-      '      <div class="home-metric__value">' + (sv.total || 0) + '</div>' +
-      '      <div class="home-metric__sub">avg ' + (sv.avg_score || 0).toFixed(2) + ' \u00b7 today ' + (sv.today || 0) + ' \u00b7 pending ' + (sv.pending || 0) + '</div>' +
-      '    </div>' +
-      '    <div class="home-metric">' +
-      '      <div class="home-metric__label">\ubaa8\ub378 \u00b7 \uc138\uc158</div>' +
-      '      <div class="home-metric__value home-metric__value--sm">' + Utils.esc(svModel || '-') + '</div>' +
-      '      <div class="home-metric__sub">\ud65c\uc131 \uc138\uc158 ' + sessions + ' \u00b7 \uba54\ubaa8\ub9ac ' + (ol.model_count || 0) + '</div>' +
-      '    </div>' +
+      (sparkSvg ?
+      '  <div class="home-gpu-spark">' +
+      '    <div class="cap"><span>GPU \uc0ac\uc6a9\ub960 \ucd94\uc138</span><span>' + gpuUtil + '% \u00b7 \ucd5c\uadfc ' + this._gpuHist.length + '\uc0d8\ud50c</span></div>' +
+            sparkSvg +
+      '  </div>' : '') +
+      '  <div class="home-gauge-grid">' +
+          gauge(gpuUtil, Utils.esc(gpuName.replace('NVIDIA GeForce ','')), (gpuTemp!=null ? gpuTemp+'\u00b0 \u00b7 ' : '') + '\ucd94\ub860') +
+          gauge(vramPct, 'VRAM', Math.round(vramUsed/1024) + '/' + Math.round(vramTotal/1024) + 'GB') +
+          gauge(cpu, 'CPU', (m.cpu_cores ? m.cpu_cores+'\ucf54\uc5b4' : '\uc0ac\uc6a9\ub960')) +
+          gauge(ramPct, 'RAM', Math.round(ramUsed/1024) + '/' + Math.round(ramTotal/1024) + 'GB') +
+      '  </div>' +
+      '  <div class="home-metrics-foot">' +
+      '    <span>Supervisor <b>' + (sv.total || 0) + '</b> \u00b7 avg <b>' + (sv.avg_score || 0).toFixed(2) + '</b> \u00b7 today ' + (sv.today || 0) + ' \u00b7 pending ' + (sv.pending || 0) + '</span>' +
+      '    <span>\ubaa8\ub378 <b>' + Utils.esc(svModel || '-') + '</b> \u00b7 \uc138\uc158 ' + sessions + ' \u00b7 \ub85c\ub4dc ' + (ol.model_count || 0) + '</span>' +
       '  </div>' +
       '</div>';
   },
@@ -346,18 +375,36 @@ const HomeView = {
     const inProgress   = Math.max(0, totalTickets - doneTickets);
     const pct = totalTickets>0 ? Math.round(doneTickets/totalTickets*100) : 0;
     const blocked = stats.blocked_tickets || 0;
+    // \uc804\uc5ed \ud1b5\uacc4 \ud3f4\ubc31 (overview teams \uac00 \ube44\uc5b4\ub3c4 supervisor/stats \ub85c \ucc44\uc6c0)
+    const gTotal = stats.total_tickets || totalTickets;
+    const gDone = stats.done_tickets || doneTickets;
+    const gInProg = Math.max(0, gTotal - gDone - blocked);
+    const gPct = gTotal>0 ? Math.round(gDone/gTotal*100) : pct;
+    const activeTeams = stats.active_teams || active;
     const num = (n) => Number(n||0).toLocaleString('ko-KR');
+
+    const donutSvg = (typeof SvgCharts!=='undefined')
+      ? SvgCharts.donut([
+          { label:'\uc644\ub8cc', value: gDone, color:'var(--chart-green)' },
+          { label:'\uc9c4\ud589', value: gInProg, color:'var(--chart-blue)' },
+          { label:'Blocked', value: blocked, color:'var(--red)' }
+        ], { size: 158, hole: 0.66 })
+      : '';
+
     el.innerHTML =
       '<div class="u-panel__header">' +
       '  <h2 class="u-panel__title">\uc9c4\ud589 \ud604\ud669</h2>' +
       '  <button class="u-btn u-btn--sm u-btn--ghost" onclick="Router.navigate(\'#/teams\')">\ud300 \ubcf4\uae30 \u203a</button>' +
       '</div>' +
       '<div class="u-panel__body">' +
-      '  <div class="home-stat-grid">' +
-      '    <div class="home-stat" onclick="Router.navigate(\'#/teams\')"><div class="home-stat__value">' + num(active) + '</div><div class="home-stat__label">\uc9c4\ud589 \uc911\uc778 \ud300</div></div>' +
-      '    <div class="home-stat"><div class="home-stat__value">' + num(inProgress) + '</div><div class="home-stat__label">\uc9c4\ud589 \ud2f0\ucf13</div></div>' +
-      '    <div class="home-stat"><div class="home-stat__value home-stat__value--ok">' + pct + '<small>%</small></div><div class="home-stat__label">\uc644\ub8cc\uc728</div></div>' +
-      '    <div class="home-stat"><div class="home-stat__value' + (blocked>0?' home-stat__value--danger':'') + '">' + num(blocked) + '</div><div class="home-stat__label">Blocked</div></div>' +
+      '  <div class="home-teams-layout">' +
+      '    <div class="home-teams-donut">' + donutSvg + '</div>' +
+      '    <div class="home-stat-grid">' +
+      '      <div class="home-stat" onclick="Router.navigate(\'#/teams\')"><div class="home-stat__value">' + num(activeTeams) + '</div><div class="home-stat__label">\uc9c4\ud589 \uc911\uc778 \ud300</div></div>' +
+      '      <div class="home-stat"><div class="home-stat__value">' + num(gInProg) + '</div><div class="home-stat__label">\uc9c4\ud589 \ud2f0\ucf13</div></div>' +
+      '      <div class="home-stat"><div class="home-stat__value home-stat__value--ok">' + gPct + '<small>%</small></div><div class="home-stat__label">\uc644\ub8cc\uc728</div></div>' +
+      '      <div class="home-stat"><div class="home-stat__value' + (blocked>0?' home-stat__value--danger':'') + '">' + num(blocked) + '</div><div class="home-stat__label">Blocked</div></div>' +
+      '    </div>' +
       '  </div>' +
       '</div>';
   },
@@ -433,19 +480,33 @@ const HomeView = {
     const body = document.getElementById('homeHeatmapBody');
     try {
       const res = await API.heatmap10min();
-      const buckets = (res && res.data) || [];
+      // API \ub294 data \ub97c \uac1d\uccb4({ "2026-05-30T11:30": 9, ... }) \ub610\ub294 \ubc30\uc5f4\ub85c \ubc18\ud658 \u2014 \ub458 \ub2e4 \uc815\uaddc\ud654
+      const raw = (res && res.data) || [];
+      let buckets;
+      if (Array.isArray(raw)) {
+        buckets = raw.map(b => (typeof b === 'number' ? { ts:'', count:b } : { ts:(b.ts||b.time||''), count:(b.count||b.value||0) }));
+      } else {
+        buckets = Object.keys(raw).sort().map(k => ({ ts: k, count: Number(raw[k]) || 0 }));
+      }
       if (!buckets.length) {
         body.innerHTML = '<div class="u-empty"><div class="u-empty__desc">\ub370\uc774\ud130 \uc5c6\uc74c</div></div>';
         return;
       }
-      const max = Math.max(1, ...buckets.map(b => (typeof b === 'number' ? b : (b.count || b.value || 0))));
+      const max = Math.max(1, ...buckets.map(b => b.count));
+      const total = buckets.reduce((a,b)=>a+b.count, 0);
+      const peak = buckets.reduce((p,b)=> b.count>p.count ? b : p, buckets[0]);
       const html = buckets.slice(-288).map(b => {
-        const count = typeof b === 'number' ? b : (b.count || b.value || 0);
-        const ts = typeof b === 'object' ? (b.ts || b.time || '') : '';
-        const intensity = Math.min(1, count / max);
-        return '<div class="home-heatmap__cell" style="--heat:' + intensity.toFixed(2) + '" title="' + Utils.esc(String(ts)) + ' \u00b7 ' + count + '"></div>';
+        const intensity = Math.min(1, b.count / max);
+        const hm = String(b.ts).slice(5,16).replace('T',' ');
+        return '<div class="home-heatmap__cell" style="--heat:' + intensity.toFixed(2) + '" title="' + Utils.esc(hm) + ' \u00b7 ' + b.count + '\uac74"></div>';
       }).join('');
-      body.innerHTML = '<div class="home-heatmap__grid">' + html + '</div>';
+      body.innerHTML =
+        '<div class="home-heatmap__grid">' + html + '</div>' +
+        '<div class="home-heatmap__foot">' +
+        '  <span>\ucd1d <b>' + total.toLocaleString('ko-KR') + '</b>\uac74 \u00b7 48h</span>' +
+        '  <span class="home-heatmap__scale">low <i style="--heat:0.15"></i><i style="--heat:0.4"></i><i style="--heat:0.7"></i><i style="--heat:1"></i> high</span>' +
+        '  <span>\ud53c\ud06c <b>' + peak.count + '</b>\uac74 @' + Utils.esc(String(peak.ts).slice(5,16).replace('T',' ')) + '</span>' +
+        '</div>';
     } catch(e) {
       body.innerHTML = '<div class="u-empty"><div class="u-empty__desc">\ub85c\ub529 \uc2e4\ud328</div></div>';
     }

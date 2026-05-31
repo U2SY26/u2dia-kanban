@@ -900,3 +900,94 @@ body {
   .home-cost-grid { grid-template-columns: 1fr 1fr !important; }
 }
 @media (max-width: 560px) { .home-cost-grid { grid-template-columns: 1fr !important; } }
+
+/* ════════════════════════════════════════════════════════════
+   홈 BI 차트 고도화 — 추이(area)·구성(donut)·GPU 게이지·히트맵 범례
+   숫자 카드 나열 → 데이터 시각화. 차트는 컨테이너 폭에 맞게 반응형.
+   (2026-05-31)
+   ════════════════════════════════════════════════════════════ */
+svg.u-chart { display: block; max-width: 100%; }
+.home-cost-chart svg.u-chart, .home-donut-wrap svg.u-chart,
+.home-gpu-spark svg.u-chart, .home-teams-donut svg.u-chart { width: 100%; height: auto; }
+.home-chart__cap {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--muted); margin-bottom: 10px;
+}
+
+/* 비용 패널 3-zone: KPI 2x2 | 추이 | 구성 도넛 */
+.home-cost-layout {
+  display: grid;
+  grid-template-columns: minmax(236px, 300px) minmax(0, 1fr) minmax(170px, 204px);
+  gap: var(--space-5); align-items: stretch;
+}
+.home-cost-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); align-content: start; }
+.home-cost-kpis .home-cost { padding: 12px 13px; }
+.home-cost--accent { /* 강조 카드 상단 틴트 */ }
+.home-cost-chart { display: flex; flex-direction: column; min-width: 0; }
+.home-cost-chart .home-chart-body { flex: 1; min-width: 0; display: flex; align-items: center; }
+.home-cost-donut { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.home-donut-wrap { display: flex; justify-content: center; }
+.home-donut-wrap svg.u-chart { max-width: 168px; }
+.home-donut-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.home-donut-legend > div { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--text-secondary); }
+.home-donut-legend i { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.home-donut-legend b { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
+@media (max-width: 1180px) {
+  .home-cost-layout { grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); }
+  .home-cost-donut { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: var(--space-5); }
+  .home-cost-donut .home-chart__cap { display: none; }
+  .home-donut-legend { margin-top: 0; flex: 1; }
+}
+@media (max-width: 760px) {
+  .home-cost-layout { grid-template-columns: 1fr; }
+  .home-cost-donut { flex-direction: column; }
+  .home-donut-wrap svg.u-chart { max-width: 150px; }
+}
+
+/* GPU 반원 게이지 + 실시간 추세 sparkline */
+.home-gpu-spark { margin-bottom: 14px; }
+.home-gpu-spark .cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: var(--fs-2xs); color: var(--muted); margin-bottom: 4px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.home-gauge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.home-gauge {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 12px 6px 13px; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 42px), var(--card);
+}
+.home-gauge svg.u-chart { width: 100%; max-width: 112px; height: auto; }
+.home-gauge__name { font-size: var(--fs-xs); font-weight: 700; color: var(--text); margin-top: 2px; line-height: 1.2; }
+.home-gauge__sub { font-size: var(--fs-2xs); color: var(--muted); margin-top: 2px; }
+.home-metrics-foot {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--line); font-size: var(--fs-xs); color: var(--text-secondary);
+}
+.home-metrics-foot b { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (max-width: 620px) { .home-gauge-grid { grid-template-columns: 1fr 1fr; } }
+
+/* 진행 현황: 도넛 + 숫자 그리드 */
+.home-teams-layout { display: grid; grid-template-columns: 168px 1fr; gap: var(--space-5); align-items: center; }
+.home-teams-donut { display: flex; justify-content: center; }
+.home-teams-donut svg.u-chart { max-width: 158px; }
+.home-teams-layout .home-stat-grid { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 720px) {
+  .home-teams-layout { grid-template-columns: 1fr; }
+  .home-teams-donut { max-width: 180px; margin: 0 auto; }
+  .home-teams-layout .home-stat-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* 히트맵 범례·통계 푸터 */
+.home-heatmap__foot {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+  font-size: var(--fs-2xs); color: var(--muted);
+}
+.home-heatmap__foot b { color: var(--text); font-variant-numeric: tabular-nums; }
+.home-heatmap__scale { display: inline-flex; align-items: center; gap: 3px; }
+.home-heatmap__scale i {
+  width: 9px; height: 9px; border-radius: 2px;
+  background: rgba(27,150,255, calc(0.08 + 0.72 * var(--heat,0)));
+}
