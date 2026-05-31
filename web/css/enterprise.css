@@ -1019,14 +1019,16 @@ svg.u-chart { display: block; max-width: 100%; }
 @media (max-width: 760px) { .met-gauges { grid-template-columns: 1fr 1fr; } }
 
 /* ── 홈 Activity 히트맵 — GitHub 컨트리뷰션 스타일 ── */
-.gh-heatmap { display: flex; gap: 10px; align-items: flex-start; overflow-x: auto; padding: 2px 0; }
-.gh-heatmap__weekday { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; padding-top: 18px; }
-.gh-heatmap__weekday span { font-size: 9px; color: var(--muted); height: 11px; line-height: 11px; }
+.gh-heatmap { display: block; padding: 2px 0; }
 .gh-heatmap__main { min-width: 0; }
-.gh-heatmap__months { display: flex; gap: 3px; height: 14px; margin-bottom: 4px; }
-.gh-heatmap__month { font-size: 9px; color: var(--muted); }
-.gh-heatmap__grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.gh-heatmap__months { display: grid; gap: 3px; height: 13px; margin: 0 0 4px 17px; overflow: visible; }
+.gh-heatmap__month { font-size: 9px; color: var(--muted); white-space: nowrap; }
+.gh-heatmap__plot { display: flex; gap: 3px; align-items: stretch; }
+.gh-heatmap__weekday { flex: 0 0 14px; display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.gh-heatmap__weekday span { font-size: 9px; color: var(--muted); line-height: 1; display: flex; align-items: center; }
+.gh-heatmap__grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); gap: 3px; flex: 1; min-width: 0; }
 .gh-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--gh0); outline: 1px solid rgba(255,255,255,0.04); outline-offset: -1px; }
+.gh-heatmap__grid .gh-cell { width: auto; height: auto; aspect-ratio: 1 / 1; }
 .gh-cell--l1 { background: var(--gh1); }
 .gh-cell--l2 { background: var(--gh2); }
 .gh-cell--l3 { background: var(--gh3); }

@@ -445,9 +445,9 @@ const HomeView = {
       '    </div>' +
       '    <div class="home-cost-kpis">' +
             card('\uc644\ub8cc \ud2f0\ucf13', num(gDone), gPct + '% \uc644\ub8cc') +
-            card('\uc9c4\ud589 \ud2f0\ucf13', num(gInProg), '') +
-            card('\ud65c\uc131 \uc5d0\uc774\uc804\ud2b8', num(agents), '', 'accent') +
-            card('Blocked', num(blocked), '', blocked > 0 ? 'danger' : '') +
+            card('\uc9c4\ud589 \ud2f0\ucf13', num(gInProg), '\uc804\uccb4 ' + num(gTotal) + '\uac74') +
+            card('\ud65c\uc131 \uc5d0\uc774\uc804\ud2b8', num(agents), num(activeTeams) + '\ud300 \uac00\ub3d9', 'accent') +
+            card('Blocked', num(blocked), blocked > 0 ? '\uc870\uce58 \ud544\uc694' : '\uc5c6\uc74c', blocked > 0 ? 'danger' : '') +
       '    </div>' +
       '  </div>' +
       '  <div class="home-ops-foot">\uc9c4\ud589 \ud300 <b>' + num(activeTeams) + '</b> \u00b7 \uc544\uce74\uc774\ube0c ' + (stats.archived_teams||0) + ' \u00b7 \uc804\uccb4 \uc9c4\ud589\ub960 <b>' + gPct + '%</b></div>' +
@@ -569,10 +569,12 @@ const HomeView = {
 
       body.innerHTML =
         '<div class="gh-heatmap">' +
-        '  <div class="gh-heatmap__weekday">' + weekdays + '</div>' +
         '  <div class="gh-heatmap__main">' +
-        '    <div class="gh-heatmap__months" style="grid-template-columns:repeat(' + weeks + ',11px)">' + monthSpans.join('') + '</div>' +
-        '    <div class="gh-heatmap__grid">' + cells + '</div>' +
+        '    <div class="gh-heatmap__months" style="grid-template-columns:repeat(' + weeks + ',minmax(0,1fr))">' + monthSpans.join('') + '</div>' +
+        '    <div class="gh-heatmap__plot">' +
+        '      <div class="gh-heatmap__weekday">' + weekdays + '</div>' +
+        '      <div class="gh-heatmap__grid" style="grid-template-columns:repeat(' + weeks + ',minmax(0,1fr))">' + cells + '</div>' +
+        '    </div>' +
         '    <div class="gh-heatmap__legend">Less <i class="gh-cell"></i><i class="gh-cell gh-cell--l1"></i><i class="gh-cell gh-cell--l2"></i><i class="gh-cell gh-cell--l3"></i><i class="gh-cell gh-cell--l4"></i> More</div>' +
         '  </div>' +
         '</div>' +
