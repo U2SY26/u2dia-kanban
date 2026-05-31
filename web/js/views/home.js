@@ -21,12 +21,12 @@ const HomeView = {
       '    <div id="homeKpiCard" class="u-panel"></div>' +              // 오늘의 요약
       '    <div id="homeYudiMetricsCard" class="u-panel home-yudi-metrics-panel"></div>' +  // 시스템·GPU
       '  </div>' +
-      '  <div id="homeRecognitionCard" class="u-panel home-recognition-panel"></div>' +
-      '  <div id="homeTeamsCard" class="u-panel"></div>' +
+      '  <div id="homeTeamsCard" class="u-panel"></div>' +             // 진행 현황 (운영 데이터)
       '  <div id="homeLowerRow" class="home-grid-bottom">' +
       '    <div id="homeFeedCard" class="u-panel"></div>' +
       '    <div id="homeHeatmapCard" class="u-panel"></div>' +
       '  </div>' +
+      '  <div id="homeRecognitionCard" class="u-panel home-recognition-panel"></div>' +  // 스타트업 쇼케이스 (하단)
       '</div>';
     await this.refresh();
     this._bindSse();
