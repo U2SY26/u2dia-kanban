@@ -436,6 +436,7 @@ const SettingsView = {
         if (!target) { clearInterval(this._metricsTimer); return; }
 
         const round = (n) => Math.round(Number(n) || 0);
+        const fmtN = (n) => (Math.round(Number(n) || 0)).toLocaleString('ko-KR');
         const gb = (mb) => (Number(mb || 0) / 1024).toFixed(1);
         const tempColor = (t) => t >= 80 ? 'var(--red)' : t >= 65 ? 'var(--orange)' : t >= 50 ? 'var(--yellow)' : 'var(--green)';
         const G = (typeof SvgCharts !== 'undefined');
@@ -497,11 +498,11 @@ const SettingsView = {
             stat('Python', Utils.esc(m.python_version || '-')) +
             stat('Load Avg', la.length ? la.map(x => Number(x).toFixed(1)).join(' · ') : '-', '1·5·15m') +
             stat('DB 크기', (m.db_size_mb != null ? m.db_size_mb : 0) + '', 'MB') +
-            stat('활성 팀', round(m.active_teams), '팀') +
-            stat('활성 티켓', round(m.active_tickets), '티켓') +
-            stat('SSE 클라이언트', round(m.sse_clients)) +
-            stat('노드', round(m.node_count), gb(m.node_memory_mb) + 'GB') +
-            stat('네트워크', '↑' + round(m.net_sent_kb) + ' ↓' + round(m.net_recv_kb), 'KB/s') +
+            stat('활성 팀', fmtN(m.active_teams), '팀') +
+            stat('활성 티켓', fmtN(m.active_tickets), '티켓') +
+            stat('SSE 클라이언트', fmtN(m.sse_clients)) +
+            stat('노드', fmtN(m.node_count), gb(m.node_memory_mb) + 'GB') +
+            stat('네트워크', '↑' + fmtN(m.net_sent_kb) + ' ↓' + fmtN(m.net_recv_kb), 'KB/s') +
           '</div>';
 
         target.innerHTML = gauges + gpuBlock + tempBlock + hostBlock;

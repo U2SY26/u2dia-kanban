@@ -1052,3 +1052,30 @@ svg.u-chart { display: block; max-width: 100%; }
   width: 9px; height: 9px; border-radius: 2px;
   background: rgba(27,150,255, calc(0.08 + 0.72 * var(--heat,0)));
 }
+
+/* ════════════════════════════════════════════════════════════
+   전 페이지 숫자 표기 통일 — 천단위 콤마(JS) + 자릿수 정렬 + 우측 배치
+   (2026-05-31) — "모든 숫자는 우측, tabular-nums"
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 자릿수 정렬(tabular-nums) 전역 ── */
+.home-cost__value, .home-cost__sub, .home-stat__value, .home-kpi-value, .home-metric__value,
+.bill-kpi__value, .bill-kpi__sub, .bill-hero__card-value, .bill-hero__card-sub,
+.usage-token-card__value, .usage-token-card__sub,
+.met-stat__v, .met-gauge__sub, .home-ops-foot, .home-ops-donut__cap,
+.bi-kpi-value, .bi-kpi-sub, .kpi-tile__value, .num,
+.shell-team__nums, .shell-group__count, .shell-group__pct, .shell-list__count,
+.home-donut-legend b, .home-heatmap__foot b, .gh-heatmap__stat b, .met-stat__k {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 지표 카드: 라벨·값·서브 우측 정렬 (통일된 우측 메트릭) ── */
+.home-cost, .met-stat, .bi-kpi-card, .bill-kpi, .usage-token-card {
+  text-align: right;
+}
+/* 차트·도넛·게이지 카드는 중앙 유지 (예외) */
+.home-gauge, .met-gauge, .home-ops-donut, .bill-hero__card { text-align: center; }
+
+/* ── 테이블 숫자 컬럼 우측 ── */
+.bi-table td.num, .bi-table th.num, .bill-table td.num, .bill-table th.num,
+table .num, td[data-num], .u-table .num { text-align: right; font-variant-numeric: tabular-nums; }
