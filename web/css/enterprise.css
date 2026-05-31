@@ -743,10 +743,10 @@ body {
 /* ── 홈 고도화: 비용 요약 / 진행 숫자 / 텍스트 로고 (2026-05-31) ── */
 .home-cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .home-cost {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-xl);
+  background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-glass); border-radius: var(--radius-xl);
   padding: 14px 16px; cursor: pointer; transition: border-color .16s, transform .16s, background .16s;
 }
-.home-cost:hover { border-color: var(--brand); background: var(--card-hover); transform: translateY(-1px); }
+.home-cost:hover { border-color: var(--brand); background: var(--card-hover); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .home-cost__label { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .home-cost__value { font-size: var(--fs-2xl); font-weight: 800; color: var(--text); line-height: 1.15; margin-top: 4px; }
 .home-cost__value--accent { color: var(--brand-light); }
@@ -754,11 +754,11 @@ body {
 
 .home-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .home-stat {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-xl);
+  background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-glass); border-radius: var(--radius-xl);
   padding: 16px 14px; text-align: center; transition: border-color .16s, transform .16s;
 }
 .home-stat[onclick] { cursor: pointer; }
-.home-stat[onclick]:hover { border-color: var(--brand); transform: translateY(-1px); }
+.home-stat[onclick]:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .home-stat__value { font-size: var(--fs-3xl); font-weight: 800; color: var(--text); line-height: 1; }
 .home-stat__value small { font-size: var(--fs-lg); color: var(--muted); }
 .home-stat__value--ok { color: var(--green); }
@@ -781,10 +781,10 @@ body {
 /* ── 대회 (Kaggle 스타일) ── */
 .comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; }
 .comp-card {
-  display: block; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-xl);
+  display: block; background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-glass); border-radius: var(--radius-xl);
   padding: 20px 22px; text-decoration: none; transition: border-color .18s, transform .18s, background .18s;
 }
-.comp-card:hover { border-color: var(--brand); background: var(--card-hover); transform: translateY(-2px); }
+.comp-card:hover { border-color: var(--brand-light); background: var(--card-hover); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .comp-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .comp-card__track { font-size: var(--fs-xs); font-weight: 700; color: var(--brand-light); text-transform: uppercase; letter-spacing: .05em; }
 .comp-card__title { font-size: var(--fs-xl); font-weight: 800; color: var(--text); margin-top: 4px; line-height: 1.25; }
