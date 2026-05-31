@@ -1695,7 +1695,7 @@ class _OperationsScreenState extends State<OperationsScreen>
               height: 28,
               child: Switch(
                 value: enabled,
-                activeThumbColor: _groupColors[g] ?? _kAccent,
+                activeColor: _groupColors[g] ?? _kAccent,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 onChanged: (v) async {
                   setState(() => _notifPrefs[key] = v);
@@ -2575,7 +2575,7 @@ class _OperationsScreenState extends State<OperationsScreen>
                         );
                         projectPath = match['project_path']
                                 ?.toString() ??
-                            '~/github/$selectedProject';
+                            '/home/u2dia/github/$selectedProject';
                       }
                       await api.createCliJob({
                         'prompt': promptCtrl.text.trim(),

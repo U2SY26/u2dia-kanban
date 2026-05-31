@@ -85,6 +85,21 @@ const API = {
   // ── 글로벌 사용량 ──
   usageGlobal() { return this.get('/api/usage/global'); },
 
+  // ── 청구/사용량 (Billing) ──
+  billingLifetime()   { return this.get('/api/billing/lifetime'); },
+  billingMonthly()    { return this.get('/api/billing/monthly'); },
+  billingCategories() { return this.get('/api/billing/categories'); },
+  billingTokens(model='sonnet') { return this.get(`/api/billing/tokens?model=${model}`); },
+  billingInvoices(q={}) {
+    const qs = new URLSearchParams(q).toString();
+    return this.get('/api/billing/invoices' + (qs ? '?' + qs : ''));
+  },
+  billingInvoiceCreate(data) { return this.post('/api/billing/invoices', data); },
+  billingInvoiceDelete(id)   { return this.del(`/api/billing/invoices/${id}`); },
+  billingBudgets()    { return this.get('/api/billing/budgets'); },
+  billingBudgetSet(data) { return this.post('/api/billing/budgets', data); },
+  billingSubscriptionValue() { return this.get('/api/billing/subscription-value'); },
+
   // ── 서버 설정 ──
   settings() { return this.get('/api/settings'); },
   settingsPut(data) { return this.put('/api/settings', data); },

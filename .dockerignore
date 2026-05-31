@@ -1,0 +1,16 @@
+.git
+.gitattributes
+.playwright-mcp
+desktop
+release
+docs
+scripts
+*.png
+*.db
+*.db-wal
+*.db-shm
+__pycache__
+node_modules
+.claude
+.mcp.json
+AGENTS.md

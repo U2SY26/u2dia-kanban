@@ -1,0 +1,1700 @@
+[
+  {
+    "viewport": "desktop",
+    "route": "home",
+    "url": "http://localhost:5555/#/",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-home.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "대시보드전체 현황",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "teams-board",
+    "url": "http://localhost:5555/#/board/team-b5feb0c2",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-teams-board.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "팀  +LEEPARK      이박 고객 피드백 긴급수정 + Track2 파이프라인                34/43      LINKO      [E2E-ALL] LINKO 2026-04-24 전수 검증    ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 3,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 1021,
+          "dx": 0,
+          "dy": 2552,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "kb-col-body",
+          "id": "",
+          "w": 173,
+          "h": 655,
+          "dx": 0,
+          "dy": 74,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "footer-scroll",
+          "id": "kbLogs",
+          "w": 1372,
+          "h": 120,
+          "dx": 0,
+          "dy": 1964,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "history",
+    "url": "http://localhost:5555/#/history",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-history.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "히스토리1013전체 운영 기록BI벤치마크55.6%5/9100%5/50%0/122.2%8/3647.8%11/2380%4/580%4/5100%5/5100%14/14100%10/10100%6/6100%13/13100%5/",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 1021,
+          "dx": 0,
+          "dy": 616,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "history-detail",
+    "url": "http://localhost:5555/#/history/team-b5feb0c2",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-history-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "히스토리1013전체 운영 기록BI벤치마크55.6%5/9100%5/50%0/122.2%8/3647.8%11/2380%4/580%4/5100%5/5100%14/14100%10/10100%6/6100%13/13100%5/",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 2,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 1021,
+          "dx": 0,
+          "dy": 616,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "history-activity-panel",
+          "id": "",
+          "w": 358,
+          "h": 594,
+          "dx": 0,
+          "dy": 1882,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "archives",
+    "url": "http://localhost:5555/#/archives",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-archives.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "아카이브929[U2DIA-E2E] 검증04.24 19:45[U2DIA-FIX] E2E 개선04.24 19:45[E2E] LINKO 검증 2026-04-2404.24 07:04[ENT-GRADE] UI/UX/Perf ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 1021,
+          "dx": 0,
+          "dy": 33365,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "archive-detail",
+    "url": "http://localhost:5555/#/archives/team-3bce5686",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-archive-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 12174,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 12174,
+        "right": 1668,
+        "bottom": 12222
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "아카이브929[U2DIA-E2E] 검증04.24 19:45[U2DIA-FIX] E2E 개선04.24 19:45[E2E] LINKO 검증 2026-04-2404.24 07:04[ENT-GRADE] UI/UX/Perf ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 8,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 1021,
+          "dx": 0,
+          "dy": 33365,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 1372,
+          "h": 1063,
+          "dx": 0,
+          "dy": 11111,
+          "ox": "hidden",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 33,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 63,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 33,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 153,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 48,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 1260,
+          "h": 120,
+          "dx": 0,
+          "dy": 33,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "competitions",
+    "url": "http://localhost:5555/#/competitions",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-competitions.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "경쟁전체 대회",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "competition-detail",
+    "url": "http://localhost:5555/#/competitions/Kaggle%20Measuring%20AGI",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-competition-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "경쟁전체 대회",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "u-panel__body competition-event-list",
+          "id": "",
+          "w": 1330,
+          "h": 731,
+          "dx": 0,
+          "dy": 8793,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "sprints",
+    "url": "http://localhost:5555/#/sprints",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-sprints.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 1063,
+        "right": 1668,
+        "bottom": 1111
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "스프린트스프린트 없음",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "settings-general",
+    "url": "http://localhost:5555/#/settings/general",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-settings-general.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 886,
+        "right": 1668,
+        "bottom": 934
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "설정7일반토큰클라이언트시스템 메트릭Hooks알림위험 작업",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 209,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "desktop",
+    "route": "settings-metrics",
+    "url": "http://localhost:5555/#/settings/metrics",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/desktop-settings-metrics.png",
+    "metrics": {
+      "viewport": {
+        "width": 1668,
+        "height": 1142
+      },
+      "body": {
+        "scrollW": 1668,
+        "clientW": 1668,
+        "scrollH": 1142,
+        "clientH": 1142
+      },
+      "main": {
+        "scrollW": 1372,
+        "clientW": 1372,
+        "scrollH": 1063,
+        "clientH": 1063,
+        "rect": {
+          "x": 296,
+          "y": 48,
+          "w": 1372,
+          "h": 1063,
+          "right": 1668,
+          "bottom": 1111
+        }
+      },
+      "content": {
+        "x": 296,
+        "y": 48,
+        "w": 1372,
+        "h": 337,
+        "right": 1668,
+        "bottom": 385
+      },
+      "list": {
+        "x": 56,
+        "y": 48,
+        "w": 240,
+        "h": 1063,
+        "right": 296,
+        "bottom": 1111
+      },
+      "listText": "설정7일반토큰클라이언트시스템 메트릭Hooks알림위험 작업",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 757,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "home",
+    "url": "http://localhost:5555/#/",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-home.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 1897,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 1897,
+        "right": 390,
+        "bottom": 1945
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "대시보드전체 현황",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 1132,
+          "ox": "hidden",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "teams-board",
+    "url": "http://localhost:5555/#/board/team-b5feb0c2",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-teams-board.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 1264,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 765,
+        "right": 390,
+        "bottom": 813
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "팀  +LEEPARK      이박 고객 피드백 긴급수정 + Track2 파이프라인                34/43      LINKO      [E2E-ALL] LINKO 2026-04-24 전수 검증    ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 4,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 724,
+          "dx": 0,
+          "dy": 2849,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 499,
+          "ox": "hidden",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "kb-col-body",
+          "id": "",
+          "w": 312,
+          "h": 108,
+          "dx": 0,
+          "dy": 405,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "footer-scroll",
+          "id": "kbLogs",
+          "w": 334,
+          "h": 88,
+          "dx": 0,
+          "dy": 2739,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "history",
+    "url": "http://localhost:5555/#/history",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-history.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 765,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 765,
+        "right": 390,
+        "bottom": 813
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "히스토리1013전체 운영 기록BI벤치마크55.6%5/9100%5/50%0/122.2%8/3647.8%11/2380%4/580%4/5100%5/5100%14/14100%10/10100%6/6100%13/13100%5/",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 724,
+          "dx": 0,
+          "dy": 913,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "history-detail",
+    "url": "http://localhost:5555/#/history/team-b5feb0c2",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-history-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 1267,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 1267,
+        "right": 390,
+        "bottom": 1315
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "히스토리1013전체 운영 기록BI벤치마크55.6%5/9100%5/50%0/122.2%8/3647.8%11/2380%4/580%4/5100%5/5100%14/14100%10/10100%6/6100%13/13100%5/",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 4,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 724,
+          "dx": 0,
+          "dy": 913,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 502,
+          "ox": "hidden",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "bi-table-wrap",
+          "id": "",
+          "w": 308,
+          "h": 304,
+          "dx": 393,
+          "dy": 0,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "DIV",
+          "cls": "history-activity-panel",
+          "id": "",
+          "w": 308,
+          "h": 439,
+          "dx": 0,
+          "dy": 2180,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "archives",
+    "url": "http://localhost:5555/#/archives",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-archives.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 765,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 765,
+        "right": 390,
+        "bottom": 813
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "아카이브929[U2DIA-E2E] 검증04.24 19:45[U2DIA-FIX] E2E 개선04.24 19:45[E2E] LINKO 검증 2026-04-2404.24 07:04[ENT-GRADE] UI/UX/Perf ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 724,
+          "dx": 0,
+          "dy": 33662,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "archive-detail",
+    "url": "http://localhost:5555/#/archives/team-3bce5686",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-archive-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 14072,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 14072,
+        "right": 390,
+        "bottom": 14120
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "아카이브929[U2DIA-E2E] 검증04.24 19:45[U2DIA-FIX] E2E 개선04.24 19:45[E2E] LINKO 검증 2026-04-2404.24 07:04[ENT-GRADE] UI/UX/Perf ",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 11,
+      "realScrollbars": [
+        {
+          "tag": "DIV",
+          "cls": "shell-list__body",
+          "id": "",
+          "w": 239,
+          "h": 724,
+          "dx": 0,
+          "dy": 33662,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 13307,
+          "ox": "hidden",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 108,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 123,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 3,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 63,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 3,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 93,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 183,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 123,
+          "ox": "auto",
+          "oy": "auto"
+        },
+        {
+          "tag": "PRE",
+          "cls": "git-code-preview",
+          "id": "",
+          "w": 238,
+          "h": 120,
+          "dx": 0,
+          "dy": 48,
+          "ox": "auto",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "competitions",
+    "url": "http://localhost:5555/#/competitions",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-competitions.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 1264,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 1264,
+        "right": 390,
+        "bottom": 1312
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "경쟁전체 대회",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 499,
+          "ox": "hidden",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "competition-detail",
+    "url": "http://localhost:5555/#/competitions/Kaggle%20Measuring%20AGI",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-competition-detail.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 10019,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 10019,
+        "right": 390,
+        "bottom": 10067
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "경쟁전체 대회",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 9254,
+          "ox": "hidden",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "sprints",
+    "url": "http://localhost:5555/#/sprints",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-sprints.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 765,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 765,
+        "right": 390,
+        "bottom": 813
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "스프린트스프린트 없음",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 31,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "settings-general",
+    "url": "http://localhost:5555/#/settings/general",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-settings-general.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 1215,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 1215,
+        "right": 390,
+        "bottom": 1263
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "설정7일반토큰클라이언트시스템 메트릭Hooks알림위험 작업",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 1,
+      "realScrollbars": [
+        {
+          "tag": "MAIN",
+          "cls": "shell-main",
+          "id": "shellMain",
+          "w": 334,
+          "h": 765,
+          "dx": 0,
+          "dy": 450,
+          "ox": "hidden",
+          "oy": "auto"
+        }
+      ],
+      "blankRight": 0,
+      "blankBottom": 0,
+      "errors": []
+    }
+  },
+  {
+    "viewport": "mobile",
+    "route": "settings-metrics",
+    "url": "http://localhost:5555/#/settings/metrics",
+    "file": "/home/u2dia/github/U2DIA-KANBAN-BOARD/docs/screenshots/T-33BECF/mobile-settings-metrics.png",
+    "metrics": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "body": {
+        "scrollW": 390,
+        "clientW": 390,
+        "scrollH": 844,
+        "clientH": 844
+      },
+      "main": {
+        "scrollW": 334,
+        "clientW": 334,
+        "scrollH": 765,
+        "clientH": 765,
+        "rect": {
+          "x": 56,
+          "y": 48,
+          "w": 334,
+          "h": 765,
+          "right": 390,
+          "bottom": 813
+        }
+      },
+      "content": {
+        "x": 56,
+        "y": 48,
+        "w": 334,
+        "h": 548,
+        "right": 390,
+        "bottom": 596
+      },
+      "list": {
+        "x": -240,
+        "y": 48,
+        "w": 240,
+        "h": 766,
+        "right": 0,
+        "bottom": 814
+      },
+      "listText": "설정7일반토큰클라이언트시스템 메트릭Hooks알림위험 작업",
+      "hiddenListLeak": 0,
+      "horizontalOverflow": 0,
+      "realScrollbarCount": 0,
+      "realScrollbars": [],
+      "blankRight": 0,
+      "blankBottom": 248,
+      "errors": []
+    }
+  }
+]

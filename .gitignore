@@ -1,49 +1,59 @@
+# Database (보안: 인증 토큰, 세션 데이터 포함)
 *.db
-*.db-shm
-*.db-wal
 *.db.bak
-*.sqlite
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Desktop (Electron) — node_modules만 제외, dist는 LFS로 관리
+desktop/node_modules/
+desktop/*/node_modules/
+
+# Playwright MCP (테스트 캐시/비디오)
+.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots (루트 디렉토리)
+/*.png
+
+# C# / .NET
+desktop/server-manager-csharp/*/bin/
+desktop/server-manager-csharp/*/obj/
+*.user
+*.suo
+*.nupkg
+
+# Secrets / Auth
 .env
-.env.*
-*.env
-secrets/
-credentials/
-*service-account*.json
 *.pem
 *.key
-*.p12
-*.keystore
-fastlane/Appfile
-android/fastlane/Appfile
-flutter_app/android/fastlane/Appfile
-claude_api_tokens_*.csv
-api_tokens_*.csv
-*_tokens.csv
-.claude/.active_ticket
-.claude/settings.local.json
-.claude/projects/
-.claude/worktrees/
-.claude/CLAUDE.local.md
-build/
-dist/
-out/
+credentials.json
+
+# Build artifacts (open-source 공개 시 제외)
 release/
-*.aab
-*.apk
-*.ipa
-node_modules/
-__pycache__/
-*.pyc
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.gradle/
-flutter_app/android/local.properties
-ios/Pods/
-*.log
-*.tmp
-.cache/
-.idea/
-.vscode/
-play-assets/screenshots-*/
-.DS_Store
+desktop/*/dist/
+desktop/*/win-unpacked/
+flutter_app/build/
+*.AppImage
+*.exe
+*.blockmap
+flutter_app/android/key.properties
+flutter_app/android/fastlane/
+
+# Claude Code 로컬/임시 파일
+.claude/settings.local.json
+.claude/.active_ticket

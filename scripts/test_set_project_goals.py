@@ -17,7 +17,7 @@ import urllib.error
 import urllib.request
 
 # 테스트 대상 모듈 임포트
-sys.path.insert(0, "~/u2dia-kanban/scripts")
+sys.path.insert(0, "/home/u2dia/github/U2DIA-KANBAN-BOARD/scripts")
 import set_project_goals as spg
 
 

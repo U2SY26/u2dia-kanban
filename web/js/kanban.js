@@ -84,9 +84,12 @@ const Kanban = {
       <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:${Utils.progressColor(progress)}"></div></div>
       <div class="text-xs text-muted" style="margin:4px 0 12px">완료 ${done}/${total} (${progress}%)</div>
 
-      <div style="margin-bottom:12px">
+      <div style="margin-bottom:8px;display:flex;flex-direction:column;gap:6px">
         <button class="btn btn-sm btn-primary" onclick="AgentOffice.open('${Utils.esc(this._teamId)}')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px">
           ${Utils.icon('users', 14, 1.75)} Agent Office
+        </button>
+        <button class="btn btn-sm" onclick="Kanban.openSprintForTeam()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f5a32a">
+          ⚡ Sprint
         </button>
       </div>
 
@@ -320,11 +323,70 @@ const Kanban = {
     banner.innerHTML = bannerHtml;
   },
 
+  async openSprintForTeam() {
+    const teamId = this._teamId;
+    if (!teamId) return;
+    let sprints = [];
+    try {
+      const res = await API.get('/api/teams/' + teamId + '/sprints');
+      sprints = (res && res.sprints) || [];
+    } catch(e) {}
+    const active = sprints.find(s => s.phase !== 'Reflect' && s.phase !== 'Done');
+    if (active) {
+      Router.navigate('#/sprints/' + active.sprint_id);
+      return;
+    }
+    // 신규 스프린트 — 인라인 모달
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#16181D;color:#ECEDEE;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:520px;width:100%;font-family:Inter,sans-serif';
+    box.innerHTML =
+      '<h3 style="margin:0 0 14px 0;font-size:16px;display:flex;align-items:center;gap:8px">⚡ 새 Sprint 시작</h3>' +
+      '<div style="font-size:12px;color:#8b949e;margin-bottom:12px;line-height:1.5">' +
+        '7단계 워크플로우(Think → Plan → Build → Review → Test → Ship → Reflect)와 ' +
+        '5가지 품질 게이트(review/qa/security/design/performance)로 작업을 체계적으로 관리합니다.' +
+      '</div>' +
+      '<label style="display:block;font-size:11px;color:#8b949e;margin-bottom:4px">스프린트 이름</label>' +
+      '<input id="sprintNameInput" type="text" placeholder="예: v2.0 인증 모듈" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e6edf3;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
+      '<label style="display:block;font-size:11px;color:#8b949e;margin-bottom:4px">목표</label>' +
+      '<textarea id="sprintGoalInput" placeholder="이 스프린트에서 무엇을 달성하나요?" rows="3" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e6edf3;font-size:13px;margin-bottom:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button style="background:transparent;color:#8b949e;border:1px solid rgba(255,255,255,0.1);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px" onclick="this.closest(\'div[style*=fixed]\').remove()">취소</button>' +
+        '<button style="background:#1B96FF;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600" onclick="Kanban._createSprint(\'' + Utils.esc(teamId) + '\', this)">생성</button>' +
+      '</div>';
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    setTimeout(() => { const i = document.getElementById('sprintNameInput'); if (i) i.focus(); }, 50);
+  },
+
+  async _createSprint(teamId, btn) {
+    const name = (document.getElementById('sprintNameInput')?.value || '').trim();
+    const goal = (document.getElementById('sprintGoalInput')?.value || '').trim();
+    if (!name) { alert('스프린트 이름을 입력하세요'); return; }
+    btn.disabled = true; btn.textContent = '생성 중...';
+    try {
+      const res = await API.post('/api/teams/' + teamId + '/sprints', { name, goal });
+      if (res && res.sprint && res.sprint.sprint_id) {
+        btn.closest('div[style*=fixed]').remove();
+        Router.navigate('#/sprints/' + res.sprint.sprint_id);
+      } else {
+        alert('생성 실패: ' + (res?.error || res?.message || 'unknown'));
+        btn.disabled = false; btn.textContent = '생성';
+      }
+    } catch(e) {
+      alert('오류: ' + (e.message || e));
+      btn.disabled = false; btn.textContent = '생성';
+    }
+  },
+
   async archiveTeam() {
-    if (!confirm('이 팀을 아카이브하시겠습니까? 대시보드에서 제거됩니다.')) return;
+    if (!confirm('이 팀을 아카이브하시겠습니까? 팀 목록에서 제거됩니다.')) return;
     const res = await API.teamArchive(this._teamId);
     if (res.ok) {
-      Router.navigate('#/');
+      // 대시보드(#/)가 아니라 팀 목록(#/teams)으로 복귀
+      Router.navigate('#/teams');
     } else {
       alert(res.message || '아카이브 실패');
     }

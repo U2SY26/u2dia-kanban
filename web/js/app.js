@@ -10,15 +10,13 @@ const App = {
     Router.on('/',              () => this.goto('home'));
     Router.on('/teams',         () => this.goto('teams'));
     Router.on('/board/:teamId', (p) => this.goto('teams', p.teamId));
-    Router.on('/sprints',       () => this.goto('sprints'));
-    Router.on('/sprints/:sprintId', (p) => this.goto('sprints', p.sprintId));
-    Router.on('/archives',      () => this.goto('archives'));
-    Router.on('/archives/:teamId', (p) => this.goto('archives', p.teamId));
     Router.on('/history',       () => this.goto('history'));
     Router.on('/history/:teamId', (p) => this.goto('history', p.teamId));
     Router.on('/competitions',  () => this.goto('competitions'));
     Router.on('/competitions/:name', (p) => this.goto('competitions', decodeURIComponent(p.name)));
     Router.on('/cli',           () => this.goto('cli'));
+    Router.on('/billing',       () => this.goto('billing'));
+    Router.on('/usage',         () => Router.navigate('#/billing'));  // 사용량은 결제로 병합
     Router.on('/settings',      () => this.goto('settings'));
     Router.on('/settings/:tab', (p) => this.goto('settings', p.tab));
 

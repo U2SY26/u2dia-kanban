@@ -17,10 +17,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _urlCtrl = TextEditingController();
+  final _tokenCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
   bool _rememberMe = true;
-  bool _showServerUrl = false;
   String? _error;
 
   @override
@@ -37,44 +37,43 @@ class _LoginScreenState extends State<LoginScreen> {
     _userCtrl.dispose();
     _passCtrl.dispose();
     _urlCtrl.dispose();
+    _tokenCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
 
     final auth = context.read<AuthService>();
     final api = context.read<ApiService>();
 
-    // 데모 자격증명 ('demo'/'demo') → 데모 모드 진입
-    if (_userCtrl.text.trim() == AuthService.demoUsername &&
-        _passCtrl.text == AuthService.demoPassword) {
-      await _enterDemoMode();
+    final url = _urlCtrl.text.trim();
+    final token = _tokenCtrl.text.trim();
+
+    // IP(서버 주소)와 토큰은 필수.
+    if (url.isEmpty) {
+      setState(() { _loading = false; _error = '서버 IP / 주소를 입력하세요'; });
+      return;
+    }
+    if (token.isEmpty) {
+      setState(() { _loading = false; _error = '접속 토큰을 입력하세요'; });
       return;
     }
 
-    // 서버 URL 업데이트
-    if (_showServerUrl) {
-      await auth.updateServerUrl(_urlCtrl.text.trim());
-    }
-    api.configure(auth.serverUrl);
+    await auth.updateServerUrl(url);
+    api.configure(auth.serverUrl, token: token);
 
-    // 서버 연결 확인
+    // 토큰으로 서버 연결·인증 확인
     final reachable = await api.ping();
     if (!reachable && mounted) {
       setState(() {
         _loading = false;
-        _error = '서버에 연결할 수 없습니다.\n서버 URL을 확인해주세요: ${auth.serverUrl}';
+        _error = '서버에 연결할 수 없습니다. IP와 토큰을 확인하세요.';
       });
       return;
     }
 
-    final ok = await auth.login(
-      _userCtrl.text.trim(),
-      _passCtrl.text,
-      rememberMe: _rememberMe,
-    );
+    final ok = await auth.loginWithToken(url, token, rememberMe: _rememberMe);
 
     if (!mounted) return;
     setState(() { _loading = false; });
@@ -82,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (ok) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
-      setState(() { _error = '아이디 또는 비밀번호가 올바르지 않습니다.'; });
+      setState(() { _error = '토큰 인증에 실패했습니다.'; });
     }
   }
 
@@ -146,24 +145,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 36),
 
-                  // 아이디
+                  // 서버 IP / 주소 (필수)
                   TextFormField(
-                    controller: _userCtrl,
+                    controller: _urlCtrl,
+                    keyboardType: TextInputType.url,
+                    autocorrect: false,
                     decoration: const InputDecoration(
-                      labelText: '아이디',
-                      prefixIcon: Icon(Icons.person_outline, size: 20),
+                      labelText: '서버 IP / 주소',
+                      hintText: 'http://100.x.x.x:5555',
+                      prefixIcon: Icon(Icons.dns_outlined, size: 20),
                     ),
-                    validator: (v) => (v?.isEmpty ?? true) ? '아이디를 입력하세요' : null,
                   ),
                   const SizedBox(height: 14),
 
-                  // 비밀번호
+                  // 접속 토큰 (필수)
                   TextFormField(
-                    controller: _passCtrl,
+                    controller: _tokenCtrl,
                     obscureText: _obscure,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     decoration: InputDecoration(
-                      labelText: '비밀번호',
-                      prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                      labelText: '접속 토큰',
+                      hintText: 'XXXX-XXXX-XXXX-XXXX',
+                      prefixIcon: const Icon(Icons.key_outlined, size: 20),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure ? Icons.visibility_off : Icons.visibility,
@@ -172,7 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) => (v?.isEmpty ?? true) ? '비밀번호를 입력하세요' : null,
                     onFieldSubmitted: (_) => _login(),
                   ),
                   const SizedBox(height: 10),
@@ -193,33 +196,53 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
                       ),
                       const Spacer(),
-                      GestureDetector(
-                        onTap: () => setState(() => _showServerUrl = !_showServerUrl),
-                        child: Text(
-                          _showServerUrl ? '▲ 서버 설정 닫기' : '⚙ 서버 설정',
-                          style: TextStyle(
-                            color: AppColors.brandLight, 
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
 
-                  // 서버 URL (접힘/펼침)
-                  if (_showServerUrl) ...[
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _urlCtrl,
-                      decoration: InputDecoration(
-                        labelText: '서버 URL',
-                        prefixIcon: const Icon(Icons.dns_outlined, size: 20),
-                        hintText: 'http://192.168.x.x:5555',
-                        hintStyle: TextStyle(
-                          color: AppColors.border, 
-                          fontSize: 12,
-                        ),
-                      ),
+                  // 서버 주소 프리셋 — 개인 빌드에서만 노출 (IP 필드 빠른 입력)
+                  if (AuthService.serverPresets.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: AuthService.serverPresets.map((p) {
+                        final selected = _urlCtrl.text.trim() == p['url'];
+                        return InkWell(
+                          onTap: () => setState(() => _urlCtrl.text = p['url']!),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.brandLight.withValues(alpha: 0.16)
+                                  : AppColors.card,
+                              border: Border.all(
+                                color: selected ? AppColors.brandLight : AppColors.border,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  p['label']!,
+                                  style: TextStyle(
+                                    color: selected ? AppColors.brandLight : AppColors.textPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  p['desc']!,
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                   const SizedBox(height: 20),

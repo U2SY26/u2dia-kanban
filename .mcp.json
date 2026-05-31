@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "kanban": {
+      "type": "url",
+      "url": "http://localhost:5555/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR-TOKEN-HERE"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "/home/u2dia/.npm-global/bin/mcp-server-filesystem",
+      "args": ["/home/u2dia/github"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "/home/u2dia/.npm-global/bin/playwright-mcp"
+    }
+  }
+}

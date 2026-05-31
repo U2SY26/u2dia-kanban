@@ -319,6 +319,9 @@
 .cli-mirror__sep{flex:1}
 .cli-mirror__btn{background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:.3rem .65rem;border-radius:6px;font-size:.85rem;cursor:pointer;transition:background .15s}
 .cli-mirror__btn:hover{background:#334155}
+.cli-mirror__btn:disabled{opacity:.55;cursor:not-allowed}
+.cli-mirror__btn--danger{color:#fda4af;background:#3f1d24;border-color:#7f1d2c}
+.cli-mirror__btn--danger:hover{background:#5a2730;border-color:#9f2638}
 .cli-mirror__hint{color:#64748b;font-size:.8rem;margin-left:.75rem}
 .cli-mirror__hint code{background:#1e293b;padding:.1rem .35rem;border-radius:4px;color:#7dd3fc}
 .cli-mirror__frame-wrap{flex:1;display:flex;min-height:480px}
@@ -351,3 +354,55 @@
 .home-flag--qa{background:rgba(251,113,133,.18);color:#fda4af}
 .home-flag--rework{background:rgba(253,224,71,.18);color:#fde047}
 .home-flag--noprogress{background:rgba(125,211,252,.18);color:#7dd3fc}
+
+/* ── CLI Keypad — 모바일 친화 단축키 패널 (T-873B48) ── */
+.cli-keypad{
+  display:flex;flex-direction:column;gap:.4rem;
+  padding:.5rem .65rem;
+  background:#0a0e16;border-bottom:1px solid #1e293b;
+}
+.cli-keypad__row{
+  display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+}
+.cli-keypad__sep{
+  display:inline-block;width:1px;height:22px;background:#1e293b;margin:0 .25rem;
+}
+.cli-key{
+  appearance:none;-webkit-appearance:none;
+  background:#1e293b;color:#e2e8f0;
+  border:1px solid #334155;border-radius:6px;
+  padding:.45rem .7rem;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.85rem;font-weight:600;
+  cursor:pointer;user-select:none;
+  min-width:38px;min-height:38px;
+  transition:background .12s,transform .08s,border-color .12s;
+}
+.cli-key:hover{background:#334155;border-color:#475569}
+.cli-key:active{transform:scale(0.96);background:#475569}
+.cli-key--num{min-width:34px;padding:.45rem .55rem;color:#7dd3fc}
+.cli-key--prev,.cli-key--next{color:#cbd5e1;background:#0f172a}
+.cli-key--danger{color:#fda4af;background:#3f1d24;border-color:#7f1d2c}
+.cli-key--danger:hover{background:#5a2730}
+.cli-key--toggle.cli-key--active{background:#1d4ed8;color:#fff;border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.25) inset}
+.cli-keypad__hint{
+  margin-top:.35rem;font-size:.72rem;color:#fbbf24;
+  background:rgba(251,191,36,.08);padding:.3rem .5rem;border-radius:4px;
+  border:1px solid rgba(251,191,36,.25);
+}
+
+/* 모바일 — 큰 터치 타겟 */
+@media (max-width: 768px){
+  .cli-keypad{padding:.4rem .35rem;gap:.35rem}
+  .cli-key{min-width:42px;min-height:44px;padding:.5rem .6rem;font-size:.9rem}
+  .cli-key--num{min-width:38px;padding:.5rem .45rem}
+  .cli-keypad__row{gap:.25rem}
+  .cli-keypad__sep{display:none}
+}
+@media (max-width: 480px){
+  .cli-mirror__bar{padding:.4rem .5rem;gap:.35rem}
+  .cli-mirror__title{font-size:.78rem;flex:1 1 100%;margin-bottom:.25rem}
+  .cli-mirror__btn{font-size:.78rem;padding:.35rem .5rem}
+}
+.cli-key--add{color:#86efac;background:#0f2a1a;border-color:#22c55e}
+.cli-key--add:hover{background:#15402b;border-color:#34d399}

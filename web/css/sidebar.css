@@ -201,3 +201,44 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+/* ── 좌측 리스트 고도화: 그룹 접기 + 깔끔한 팀 카드 (2026-05-31) ── */
+.shell-list__count {
+  display: inline-block; font-size: 11px; font-weight: 700; color: var(--brand-light);
+  background: var(--brand-bg); padding: 0 7px; border-radius: 999px; margin-left: 4px; vertical-align: middle;
+}
+.shell-group {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px; cursor: pointer;
+  user-select: none; transition: background .14s; border-radius: 7px; margin: 2px 6px;
+}
+.shell-group:hover { background: var(--card-hover); }
+.shell-group__chevron { color: var(--muted); transition: transform .18s ease; flex-shrink: 0; }
+.shell-group--open .shell-group__chevron { transform: rotate(90deg); }
+.shell-group__name {
+  flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shell-group__count {
+  font-size: 11px; font-weight: 700; color: var(--muted); background: var(--surface-sunken);
+  padding: 0 7px; border-radius: 999px; flex-shrink: 0;
+}
+.shell-group__pct { font-size: 11px; color: var(--green); font-weight: 600; flex-shrink: 0; min-width: 30px; text-align: right; }
+.shell-group__body { padding: 2px 6px 6px; }
+
+.shell-team {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+  border: 1px solid transparent; transition: background .14s, border-color .14s;
+}
+.shell-team:hover { background: var(--card-hover); }
+.shell-team--active { background: var(--brand-bg); border-color: var(--brand); }
+.shell-team__name {
+  font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
+}
+.shell-team--active .shell-team__name { color: var(--brand-light); font-weight: 600; }
+.shell-team__meta { display: flex; align-items: center; gap: 8px; }
+.shell-team__bar { flex: 1; height: 4px; background: var(--surface-sunken); border-radius: 2px; overflow: hidden; }
+.shell-team__bar-fill { height: 100%; background: var(--brand); border-radius: 2px; transition: width .3s; }
+.shell-team__bar-fill--done { background: var(--green); }
+.shell-team__bar-fill--warn { background: var(--orange); }
+.shell-team__nums { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.shell-team__blocked { color: var(--red-light); font-weight: 600; }

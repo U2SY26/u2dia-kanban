@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../theme/colors.dart';
 import 'dashboard/dashboard_screen.dart';
+import 'dashboard/dashboard_webview_screen.dart';
 import 'kanban/kanban_screen.dart';
 import 'chat/chat_screen.dart';
 import 'projects/project_overview_screen.dart';
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      DashboardScreen(
+      DashboardWebViewScreen(
         onTeamTap: navigateToBoard,
         onNavigateToTab: navigateToTab,
         onNavigateToOperations: navigateToOperations,

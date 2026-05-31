@@ -14,10 +14,12 @@ class CliMirrorScreen extends StatefulWidget {
 }
 
 class _CliMirrorScreenState extends State<CliMirrorScreen> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
   bool _loading = true;
   String? _error;
-  bool _native = false;
+  // 단축키 패널이 PTY로 정상 송신되도록 native(xterm) 모드를 기본값으로.
+  // WebView 모드는 ttyd 페이지의 WebSocket을 외부에서 가로채야 해서 단축키 미동작 케이스 다수.
+  bool _native = true;
   Terminal? _term;
   WebSocketChannel? _ws;
   bool _showTmuxRow = true;
@@ -30,6 +32,19 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSessions();
+    // native 기본 — initState 직후 setupNative 호출 (context.read는 첫 frame 이후 안전)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_native && _term == null) {
+        _setupNative();
+      }
+      setState(() => _loading = false);
+    });
+  }
+
+  void _ensureWebViewController() {
+    if (_controller != null) return;
     final api = context.read<ApiService>();
     final url = '${api.baseUrl}/cli/?writable=1';
     final headers = <String, String>{};
@@ -48,7 +63,6 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
         }),
       ))
       ..loadRequest(Uri.parse(url), headers: headers);
-    _loadSessions();
   }
 
   Future<void> _loadSessions() async {
@@ -120,8 +134,9 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
       ws.sink.add(buf);
       return;
     }
+    if (_controller == null) return;
     final hex = bytes.map((b) => (b & 0xFF).toRadixString(16).padLeft(2, '0')).join();
-    await _controller.runJavaScript("(function(){"
+    await _controller!.runJavaScript("(function(){"
         "var t=window.term;"
         "var ws=t&&t.__ws;"
         "if(!ws||ws.readyState!==1)return;"
@@ -256,12 +271,17 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
           ),
           IconButton(
             icon: Icon(_native ? Icons.web : Icons.terminal, size: 20),
-            tooltip: _native ? 'WebView 모드' : 'Native xterm 모드',
+            tooltip: _native ? 'WebView 모드 (단축키 미동작)' : 'Native xterm 모드 (단축키 OK)',
             onPressed: () {
               setState(() {
                 _native = !_native;
                 if (_native && _term == null) _setupNative();
-                if (!_native) { _ws?.sink.close(); _ws = null; _term = null; }
+                if (!_native) {
+                  _ws?.sink.close();
+                  _ws = null;
+                  _term = null;
+                  _ensureWebViewController();
+                }
               });
             },
           ),
@@ -270,7 +290,7 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
             onPressed: () {
               _loadSessions();
               if (_native) { _ws?.sink.close(); _setupNative(); }
-              else { _controller.reload(); }
+              else { _controller?.reload(); }
             },
             tooltip: '재연결/세션 갱신',
           ),
@@ -295,7 +315,7 @@ class _CliMirrorScreenState extends State<CliMirrorScreen> {
                     searchHitBackground: Color(0xFFFFFF00), searchHitBackgroundCurrent: Color(0xFFFF9900), searchHitForeground: Color(0xFF000000),
                   ))
                 : Stack(children: [
-                WebViewWidget(controller: _controller),
+                if (_controller != null) WebViewWidget(controller: _controller!),
                 if (_loading) const Center(child: CircularProgressIndicator()),
                 if (_error != null)
                   Center(

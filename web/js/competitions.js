@@ -76,9 +76,9 @@ const Competitions = {
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
             <div style="flex:1;min-width:0">
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
-                <span style="font-size:var(--fs-lg);font-weight:700">${Utils.esc(title)}</span>
-                <span style="font-size:10px;background:${statusColor};color:#000;padding:2px 6px;border-radius:4px;font-weight:700">${statusLabel}</span>
-                ${dDay ? `<span style="font-size:10px;background:${dDayColor};color:#000;padding:2px 6px;border-radius:4px;font-weight:700;font-family:monospace">${dDay}</span>` : ''}
+                <span style="font-size:var(--fs-lg);font-weight:700;color:var(--text-primary, #e6edf3)">${Utils.esc(title)}</span>
+                <span style="font-size:10px;background:color-mix(in srgb, ${statusColor} 18%, transparent);color:${statusColor};border:1px solid color-mix(in srgb, ${statusColor} 35%, transparent);padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:0.02em">${statusLabel}</span>
+                ${dDay ? `<span style="font-size:10px;background:color-mix(in srgb, ${dDayColor} 18%, transparent);color:${dDayColor};border:1px solid color-mix(in srgb, ${dDayColor} 35%, transparent);padding:2px 6px;border-radius:4px;font-weight:600;font-family:monospace">${dDay}</span>` : ''}
               </div>
               <div style="font-size:var(--fs-xs);color:var(--text-muted);margin-bottom:8px">
                 ${Utils.esc(c.project_group)}${deadline ? ` · 마감 ${Utils.esc(deadline)}` : ''}${track ? ` · ${Utils.esc(track)}` : ''}${prizeUsd ? ` · $${prizeUsd.toLocaleString()}` : ''}
@@ -97,8 +97,8 @@ const Competitions = {
           </div>
           ${(writeupUrl || kaggleUrl) ? `
           <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
-            ${writeupUrl ? `<a href="${Utils.esc(writeupUrl)}" target="_blank" rel="noopener" style="font-size:var(--fs-xs);padding:3px 8px;background:var(--purple, #a371f7);color:#000;border-radius:4px;text-decoration:none;font-weight:700">Writeup${writeupTitle ? ': ' + Utils.esc(writeupTitle).slice(0, 50) : ''}</a>` : ''}
-            ${kaggleUrl ? `<a href="${Utils.esc(kaggleUrl)}" target="_blank" rel="noopener" style="font-size:var(--fs-xs);padding:3px 8px;background:var(--blue);color:#000;border-radius:4px;text-decoration:none;font-weight:700">Kaggle</a>` : ''}
+            ${writeupUrl ? `<a href="${Utils.esc(writeupUrl)}" target="_blank" rel="noopener" style="font-size:var(--fs-xs);padding:3px 8px;background:rgba(163,113,247,0.15);color:#c8a8ff;border:1px solid rgba(163,113,247,0.35);border-radius:4px;text-decoration:none;font-weight:600">📝 Writeup${writeupTitle ? ': ' + Utils.esc(writeupTitle).slice(0, 50) : ''}</a>` : ''}
+            ${kaggleUrl ? `<a href="${Utils.esc(kaggleUrl)}" target="_blank" rel="noopener" style="font-size:var(--fs-xs);padding:3px 8px;background:rgba(56,139,253,0.15);color:#79b8ff;border:1px solid rgba(56,139,253,0.35);border-radius:4px;text-decoration:none;font-weight:600">🔗 Kaggle</a>` : ''}
           </div>` : ''}
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
             <div style="font-size:var(--fs-xs);color:var(--text-muted);display:flex;gap:8px;align-items:center">
@@ -181,7 +181,8 @@ const Competitions = {
       const [icon, color] = typeMap[e.event_type] || ['', 'var(--text-muted)'];
       const time = Utils.timeAgo(e.created_at);
       const title = Utils.esc(e.title || '').slice(0, 100);
-      const scoreTag = e.score != null ? `<span style="background:${e.score >= 4 ? 'var(--green)' : e.score >= 3 ? 'var(--yellow)' : 'var(--red)'};color:#000;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">${e.score}</span>` : '';
+      const _sc = e.score >= 4 ? 'var(--green)' : e.score >= 3 ? 'var(--yellow)' : 'var(--red)';
+      const scoreTag = e.score != null ? `<span style="background:color-mix(in srgb, ${_sc} 18%, transparent);color:${_sc};border:1px solid color-mix(in srgb, ${_sc} 35%, transparent);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">${e.score}</span>` : '';
       return `
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(48,54,61,0.3)">
           <span style="flex-shrink:0;font-size:13px">${icon}</span>

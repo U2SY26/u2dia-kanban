@@ -107,9 +107,12 @@ def main():
         sys.exit(f"❌ tracks.update 실패: {e}\n응답: {e.content.decode('utf-8') if e.content else ''}")
     print(f"✅ Track '{args.track}' 업데이트: status={release_status}")
 
-    # 4. edits.commit — 커밋
+    # 4. edits.commit — 커밋 (changesNotSentForReview=True 로 자동 review 비활성)
     try:
-        committed = service.edits().commit(packageName=args.package, editId=edit_id).execute()
+        committed = service.edits().commit(
+            packageName=args.package, editId=edit_id,
+            changesNotSentForReview=True,
+        ).execute()
     except HttpError as e:
         sys.exit(f"❌ edits.commit 실패: {e}\n응답: {e.content.decode('utf-8') if e.content else ''}")
     print(f"🎉 커밋 완료: editId={committed.get('id')}")

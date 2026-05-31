@@ -1,0 +1,17 @@
+[Unit]
+Description=U2DIA CLI Reverse Hook Poller
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/u2dia/github/U2DIA-KANBAN-BOARD/hooks/cli-poller.sh
+Restart=always
+RestartSec=5
+Environment=U2DIA_URL=http://localhost:5555
+Environment=POLL_INTERVAL=5
+Environment=DEFAULT_CWD=%h
+StandardOutput=append:/tmp/u2dia-cli-poller.log
+StandardError=append:/tmp/u2dia-cli-poller.log
+
+[Install]
+WantedBy=default.target

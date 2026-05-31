@@ -15,7 +15,9 @@
   "build": {
     "appId": "com.u2dia.ai-server-agent",
     "productName": "U2DIA AI SERVER AGENT",
-    "directories": { "output": "../../release" },
+    "directories": {
+      "output": "../../release"
+    },
     "win": {
       "target": "nsis",
       "icon": "../assets/icon.png"
@@ -27,7 +29,17 @@
       "shortcutName": "U2DIA AI SERVER AGENT"
     },
     "extraResources": [
-      { "from": "../assets", "to": "assets" }
-    ]
+      {
+        "from": "../assets",
+        "to": "assets"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "../assets/icon.png"
+    }
   }
 }

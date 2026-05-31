@@ -152,9 +152,16 @@ const SettingsView = {
           backend, 'SettingsView._setBackend'
         )
       ) +
+      this._field('Supervisor 모델',
+        '검수 자동화에 사용되는 LLM 모델입니다. 부하가 크면 가벼운 모델로 전환하세요.',
+        '<div id="supervisorModelSlot" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+        '  <span style="font-size:11px;color:var(--text-muted-new)">로딩...</span>' +
+        '</div>'
+      ) +
       this._field('시스템 사운드', '알림 도착 시 짧은 소리를 재생합니다.',
         this._switch('swSound', soundOn, 'SettingsView._setSound(this.checked)')
       );
+    setTimeout(() => SettingsView._loadSupervisorModel(), 100);
 
     const infoBody =
       this._field('앱 버전', '현재 실행 중인 서버/프론트 버전입니다.',
@@ -180,6 +187,79 @@ const SettingsView = {
   _setLang(v) { localStorage.setItem('u2dia.lang', v); },
   _setBackend(v) { localStorage.setItem('u2dia.yudiBackend', v); SettingsView._renderGeneral(document.getElementById('shellMain')); },
   _setSound(v) { localStorage.setItem('u2dia.sound', v ? 'true' : 'false'); },
+
+  async _loadSupervisorModel() {
+    const slot = document.getElementById('supervisorModelSlot');
+    if (!slot) return;
+    try {
+      const res = await fetch('/api/settings/supervisor_model').then(r => r.json());
+      if (!res.ok) {
+        slot.innerHTML = '<span style="color:var(--red,#ef4444);font-size:11px">로딩 실패</span>';
+        return;
+      }
+      const opts = (res.models || []).map(m =>
+        '<option value="' + Utils.esc(m.id) + '"' + (m.id === res.current ? ' selected' : '') + '>' +
+          Utils.esc(m.name) + ' (' + Utils.esc(m.provider) + ')' +
+        '</option>'
+      ).join('');
+      slot.innerHTML =
+        '<select class="settings-select" id="supervisorModelSel" style="min-width:240px" onchange="SettingsView._setSupervisorModel(this.value)">' +
+          opts +
+        '</select>' +
+        '<button class="u-btn u-btn--sm" id="supervisorHealthBtn" onclick="SettingsView._healthSupervisor()">상태 확인</button>' +
+        '<span id="supervisorHealthHint" style="font-size:11px;color:var(--text-muted-new);margin-left:8px"></span>';
+      const cur = (res.models || []).find(m => m.id === res.current);
+      if (cur && cur.description) {
+        const hint = document.getElementById('supervisorHealthHint');
+        if (hint) hint.textContent = cur.description;
+      }
+    } catch (e) {
+      slot.innerHTML = '<span style="color:var(--red);font-size:11px">' + Utils.esc(e.message || e) + '</span>';
+    }
+  },
+
+  async _setSupervisorModel(model) {
+    const hint = document.getElementById('supervisorHealthHint');
+    if (hint) hint.textContent = '저장 중...';
+    try {
+      const res = await fetch('/api/settings/supervisor_model', {
+        method: 'PUT', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: model})
+      }).then(r => r.json());
+      if (res.ok) {
+        if (hint) hint.textContent = '✅ 저장됨 — 다음 검수부터 적용';
+        setTimeout(() => SettingsView._loadSupervisorModel(), 1500);
+      } else {
+        if (hint) hint.textContent = '❌ ' + (res.error || '실패');
+      }
+    } catch(e) {
+      if (hint) hint.textContent = '❌ ' + (e.message || e);
+    }
+  },
+
+  async _healthSupervisor() {
+    const sel = document.getElementById('supervisorModelSel');
+    const btn = document.getElementById('supervisorHealthBtn');
+    const hint = document.getElementById('supervisorHealthHint');
+    if (!sel) return;
+    if (btn) { btn.disabled = true; btn.textContent = '확인 중...'; }
+    if (hint) hint.textContent = '...';
+    try {
+      const res = await fetch('/api/settings/supervisor_model/health', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: sel.value})
+      }).then(r => r.json());
+      if (res.ok && res.healthy) {
+        if (hint) hint.textContent = '🟢 OK (' + (res.latency_ms || '-') + 'ms) — ' + (res.response_preview || '').slice(0, 40);
+      } else {
+        if (hint) hint.textContent = '🔴 실패: ' + (res.error || res.message || '응답 없음');
+      }
+    } catch (e) {
+      if (hint) hint.textContent = '🔴 ' + (e.message || e);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '상태 확인'; }
+    }
+  },
 
   /* ═════════════════════════════════
      2. 토큰

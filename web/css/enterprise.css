@@ -739,3 +739,67 @@ body {
     padding: 12px;
   }
 }
+
+/* ── 홈 고도화: 비용 요약 / 진행 숫자 / 텍스트 로고 (2026-05-31) ── */
+.home-cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.home-cost {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; cursor: pointer; transition: border-color .16s, transform .16s, background .16s;
+}
+.home-cost:hover { border-color: var(--brand); background: var(--card-hover); transform: translateY(-1px); }
+.home-cost__label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.home-cost__value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.15; margin-top: 4px; }
+.home-cost__value--accent { color: var(--brand-light); }
+.home-cost__sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+.home-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.home-stat {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 14px; text-align: center; transition: border-color .16s, transform .16s;
+}
+.home-stat[onclick] { cursor: pointer; }
+.home-stat[onclick]:hover { border-color: var(--brand); transform: translateY(-1px); }
+.home-stat__value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+.home-stat__value small { font-size: 16px; color: var(--muted); }
+.home-stat__value--ok { color: var(--green); }
+.home-stat__value--danger { color: var(--red-light); }
+.home-stat__label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+.home-recognition__logo-text {
+  font-size: 17px; font-weight: 800; letter-spacing: -.01em; color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center; height: 100%;
+}
+.home-recognition__status {
+  display: inline-block; font-size: 10px; font-weight: 700; color: var(--green);
+  background: var(--green-bg); padding: 1px 7px; border-radius: 999px; margin-left: 4px; vertical-align: middle;
+}
+@media (max-width: 900px) {
+  .home-cost-grid { grid-template-columns: 1fr; }
+  .home-stat-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── 대회 (Kaggle 스타일) ── */
+.comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; }
+.comp-card {
+  display: block; background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 20px 22px; text-decoration: none; transition: border-color .18s, transform .18s, background .18s;
+}
+.comp-card:hover { border-color: var(--brand); background: var(--card-hover); transform: translateY(-2px); }
+.comp-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.comp-card__track { font-size: 11px; font-weight: 700; color: var(--brand-light); text-transform: uppercase; letter-spacing: .05em; }
+.comp-card__title { font-size: 18px; font-weight: 800; color: var(--text); margin-top: 4px; line-height: 1.25; }
+.comp-card__host { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+.comp-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+.comp-badge--live { color: var(--green); background: var(--green-bg); }
+.comp-badge--done { color: var(--brand-light); background: var(--brand-bg); }
+.comp-card__desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 14px 0; }
+.comp-stepper { display: flex; align-items: center; margin: 16px 0 14px; }
+.comp-step { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.comp-step__dot { width: 11px; height: 11px; border-radius: 50%; background: var(--surface-sunken); border: 2px solid var(--line-light); }
+.comp-step--done .comp-step__dot { background: var(--green); border-color: var(--green); }
+.comp-step__label { font-size: 10px; color: var(--muted); }
+.comp-step--done .comp-step__label { color: var(--text-secondary); }
+.comp-step__line { flex: 1; height: 2px; background: var(--line-light); margin: 0 2px 16px; }
+.comp-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.comp-tag { font-size: 11px; color: var(--text-secondary); background: var(--surface-sunken); padding: 3px 10px; border-radius: 6px; }
+@media (max-width: 900px) { .comp-grid { grid-template-columns: 1fr; } }

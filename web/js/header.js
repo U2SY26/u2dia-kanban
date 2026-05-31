@@ -95,10 +95,9 @@ const Header = {
     if (!results) return;
     const commands = [
       { label: '\ud648\uc73c\ub85c', route: '#/' },
-      { label: '\uc2a4\ud504\ub9b0\ud2b8', route: '#/sprints' },
-      { label: '\uc544\uce74\uc774\ube0c', route: '#/archives' },
+      { label: '\uacb0\uc81c\u00b7\uc0ac\uc6a9\ub7c9', route: '#/billing' },
       { label: '\ud788\uc2a4\ud1a0\ub9ac', route: '#/history' },
-      { label: '\uacbd\uc7c1', route: '#/competitions' },
+      { label: '\ub300\ud68c', route: '#/competitions' },
       { label: '\uc124\uc815', route: '#/settings' },
       { label: '\uc124\uc815 > \ud1a0\ud070', route: '#/settings/tokens' },
       { label: '\uc124\uc815 > \uc2dc\uc2a4\ud15c \uba54\ud2b8\ub9ad', route: '#/settings/metrics' },

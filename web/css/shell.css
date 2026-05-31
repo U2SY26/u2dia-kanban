@@ -15,6 +15,10 @@
   transition: grid-template-rows var(--dur-slow) var(--ease-out);
 }
 #shell.shell--list-collapsed { grid-template-columns: var(--shell-rail-w) 0 1fr; }
+/* 목록 불필요 뷰 — 좌측 목록 영역 완전 제거, 메인이 전체폭 사용 */
+#shell.shell--list-hidden { grid-template-columns: var(--shell-rail-w) 0 1fr; }
+#shell.shell--list-hidden .shell-list { display: none; }
+#shell.shell--list-hidden .shell-list-resizer { display: none !important; }
 #shell.shell--cli-open { grid-template-rows: var(--shell-header-h) 1fr 35vh; }
 #shell.shell--cli-open-half { grid-template-rows: var(--shell-header-h) 1fr 50vh; }
 #shell.shell--cli-open-full { grid-template-rows: var(--shell-header-h) 1fr calc(100vh - var(--shell-header-h)); }
@@ -293,6 +297,15 @@
   box-sizing: border-box;
 }
 
+/* 목록 숨김(전체폭) 뷰 — 초광폭 모니터에서 콘텐츠 가독성 위해 중앙 정렬 + 상한 */
+#shell.shell--list-hidden .shell-main__content {
+  max-width: 1760px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-6, 28px);
+  padding-right: var(--space-6, 28px);
+}
+
 .shell-main::-webkit-scrollbar { width: 8px; height: 8px; }
 .shell-main::-webkit-scrollbar-track { background: transparent; }
 .shell-main::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 4px; border: 2px solid var(--surface-0); }
@@ -459,4 +472,179 @@
   .home-welcome h1 { font-size: 22px; }
   .shell-header__logo-text { display: none; }
   .shell-main__content { padding: var(--space-4); }
+}
+
+/* ── 유디 메트릭 strip (T-40ED37) ── */
+.home-yudi-metrics-panel { margin-top: var(--space-3); }
+.home-yudi-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+.home-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3);
+  background: var(--bg-elevated, #0f172a);
+  border: 1px solid var(--line, #1e293b);
+  border-radius: 8px;
+  min-height: 92px;
+}
+.home-metric__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted-new, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.home-metric__value {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
+  color: var(--text-primary, #ECEDEE);
+  line-height: 1.1;
+}
+.home-metric__value--sm {
+  font-size: 14px;
+  font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
+  color: var(--brand-light, #7dd3fc);
+  word-break: break-all;
+}
+.home-metric__value small { font-size: 13px; color: var(--text-muted-new, #64748b); margin-left: 2px; font-weight: 600; }
+.home-metric__sub {
+  font-size: 11px;
+  color: var(--text-muted-new, #64748b);
+  font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
+  margin-top: auto;
+}
+.home-metric__bar {
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.home-metric__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width .3s;
+}
+.home-metric__bar--ok    { background: #22c55e; }
+.home-metric__bar--warn  { background: #fbbf24; }
+.home-metric__bar--danger{ background: #ef4444; }
+
+.home-yudi__settings-btn {
+  margin-left: auto;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .home-yudi-metrics { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .home-yudi-metrics { grid-template-columns: 1fr; }
+}
+
+/* ── Recognition partners (T-8D2DB9) ── */
+.home-recognition-panel { margin-top: var(--space-3); }
+.home-recognition {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+.home-recognition__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: linear-gradient(135deg, #0a0e16 0%, #0f172a 100%);
+  border: 1px solid var(--line, #1e293b);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.home-recognition__card:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand-light, #7dd3fc);
+  box-shadow: 0 6px 18px rgba(125, 211, 252, 0.10);
+}
+.home-recognition__logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  background: #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  border: 1px solid #1e293b;
+}
+.home-recognition__logo {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+.home-recognition__body { display: flex; flex-direction: column; gap: 4px; }
+.home-recognition__tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted-new, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.home-recognition__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #ECEDEE);
+  line-height: 1.25;
+}
+.home-recognition__desc {
+  font-size: 12px;
+  color: var(--text-muted-new, #94a3b8);
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .home-recognition { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .home-recognition { grid-template-columns: 1fr; }
+}
+
+/* ── Sidebar resizer + collapse toggle ── */
+.shell-rail__spacer { flex: 1; }
+.shell-rail__btn--collapse { opacity: 0.65; }
+.shell-rail__btn--collapse:hover { opacity: 1; }
+#shell.shell--list-collapsed .shell-rail__btn--collapse svg { transform: scaleX(-1); }
+
+.shell-list-resizer {
+  position: fixed;
+  top: var(--shell-header-h, 48px);
+  bottom: var(--shell-cli-bar-h, 30px);
+  left: calc(var(--shell-rail-w, 56px) + var(--shell-list-w, 240px));
+  width: 6px;
+  margin-left: -3px;
+  cursor: ew-resize;
+  z-index: 30;
+  background: transparent;
+  transition: background 0.12s;
+  touch-action: none;
+}
+.shell-list-resizer:hover,
+.shell-list-resizer--dragging,
+.shell-list-resizer:focus-visible {
+  background: rgba(125, 211, 252, 0.25);
+  outline: none;
+}
+#shell.shell--list-collapsed ~ .shell-list-resizer,
+#shell.shell--list-collapsed + .shell-list-resizer { display: none; }
+
+@media (max-width: 900px) {
+  .shell-list-resizer { display: none; }
 }

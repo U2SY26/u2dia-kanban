@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- <ApplicationIcon>Assets\icon.ico</ApplicationIcon> -->
+    <AssemblyName>U2DIA.ServerManager</AssemblyName>
+    <RootNamespace>U2DIA.ServerManager</RootNamespace>
+    <Version>1.0.0</Version>
+    <Description>U2DIA AI SERVER AGENT — Server Manager (C# + WebView2)</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3800.47" />
+  </ItemGroup>
+
+  <!-- server.py + web/ 는 배포 시 복사 (개발 중에는 원본 참조) -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <None Include="..\..\..\..\server.py" Link="Resources\server.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\..\..\web\**\*" LinkBase="Resources\web">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

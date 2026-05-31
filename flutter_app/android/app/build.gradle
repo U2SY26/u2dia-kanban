@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId "com.u2dia.kanban"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 24
         targetSdk flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName

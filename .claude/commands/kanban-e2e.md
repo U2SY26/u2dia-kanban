@@ -6,7 +6,7 @@
 아래 Bash 스크립트를 실행하세요. 실패 항목이 있으면 원인을 파악하고 수정한 뒤 해당 Phase만 재실행합니다.
 
 ```bash
-cd ~/u2dia-kanban
+cd /home/u2dia/github/U2DIA-KANBAN-BOARD
 P=0; F=0
 
 test_pass() { P=$((P+1)); }

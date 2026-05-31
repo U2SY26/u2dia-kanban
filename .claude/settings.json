@@ -1,0 +1,109 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/kanban-enforce.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/checklist-enforce.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/flutter-version-bump.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-build-check-enhanced.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/error-handling-reminder.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/notify-app.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/notify-app.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "칸반 거버넌스 필수 (.claude/KANBAN_GOVERNANCE.md): 모든 작업은 칸반을 통한다. (1)병렬 가능한 것끼리 팀/티켓 구성 (2)전문 에이전트에 역할-매칭 병렬 할당 (3)티켓마다 체크리스트 부여, 100% 체크+E2E 통과 후 제출, 이상 시 최대 3회 재작업 (4)로컬 LLM Supervisor가 산출물+체크리스트 100% 검증 (5)오케스트레이터가 전 티켓 완료 시 산출물 결합 판단, 이상 시 재작업(최대 3회). 작업 전 kanban_team_list 확인. MCP 실패 시 REST(curl http://localhost:5555/api/...). 코드 수정 전 .claude/.active_ticket 에 티켓ID 기록 필수."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/active-ticket-sync.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "kanban": {
+      "type": "url",
+      "url": "http://localhost:5555/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR-TOKEN-HERE"
+      }
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MultiEdit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)",
+      "NotebookEdit(*)",
+      "mcp__*"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "enableAllProjectMcpServers": true,
+  "env": {}
+}
