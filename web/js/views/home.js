@@ -79,32 +79,37 @@ const HomeView = {
   _renderRecognition() {
     const el = document.getElementById('homeRecognitionCard');
     if (!el) return;
+    // img: 실제 로고 파일을 /assets/partners/ 에 넣으면 그 이미지가 우선 사용됨 (없으면 SVG 폴백)
+    //      chip: 'light' = 흰 칩(어두운 로고용) · 'dark' = 검은 칩(밝은/흰 로고용)
     const partners = [
-      { logo: 'nvidia', name: 'NVIDIA Inception', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
+      { logo: 'nvidia', img: '', chip: 'dark', name: 'NVIDIA Inception', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
         tag: 'AI Startup Program', status: '참여 중',
         desc: 'NVIDIA의 최신 기술과 생태계를 활용하여 더욱 강력한 제조 AI 솔루션을 개발',
         href: 'https://www.nvidia.com/en-us/startups/' },
-      { logo: 'nvidia', name: 'NVIDIA Innovation Lab', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
+      { logo: 'nvidia', img: '', chip: 'dark', name: 'NVIDIA Innovation Lab', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
         tag: 'H100 8-GPU · Brev', status: '선정',
         desc: '60일간 H100 8-GPU 노드를 NVIDIA Brev 플랫폼으로 제공 — 제조 AI 파인튜닝·추론 벤치마킹',
         href: 'https://www.nvidia.com/en-us/data-center/innovation-lab/' },
-      { logo: 'aws', name: 'AWS Startups', brand: '#FF9900', glow: 'rgba(255,153,0,0.30)',
+      { logo: 'aws', img: '', chip: 'dark', name: 'AWS Startups', brand: '#FF9900', glow: 'rgba(255,153,0,0.30)',
         tag: 'Bedrock · SageMaker', status: '참여 중',
         desc: '클라우드 크레딧 + 기술 멘토링 + AI/ML 도구 — Amazon Bedrock·SageMaker·EKS 활용',
         href: 'https://aws.amazon.com/startups/programs?lang=ko' },
-      { logo: 'lambda', name: 'Lambda Startup Program', brand: '#7C5CFC', glow: 'rgba(124,92,252,0.30)',
+      { logo: 'lambda', img: '', chip: 'dark', name: 'Lambda Startup Program', brand: '#7C5CFC', glow: 'rgba(124,92,252,0.30)',
         tag: 'GPU Cloud', status: '참여 중',
         desc: '단일 GPU 부터 수십만 GPU 까지 — 제조 AI 모델 학습·서빙용 슈퍼인텔리전스 인프라',
         href: 'https://lambda.ai/service/gpu-cloud' },
-      { logo: 'google', name: 'Google Cloud for Startups', brand: '#4285F4', glow: 'rgba(66,133,244,0.30)',
+      { logo: 'google', img: '', chip: 'light', name: 'Google Cloud for Startups', brand: '#4285F4', glow: 'rgba(66,133,244,0.30)',
         tag: 'Vertex AI · BigQuery', status: '참여 중',
         desc: 'Vertex AI · BigQuery · GKE 활용 — 제조 데이터 안전 저장·분석 + 글로벌 확장 가속',
         href: 'https://cloud.google.com/startup?hl=ko' },
-      { logo: 'microsoft', name: 'Microsoft for Startups', brand: '#00A4EF', glow: 'rgba(0,164,239,0.30)',
+      { logo: 'microsoft', img: '', chip: 'light', name: 'Microsoft for Startups', brand: '#00A4EF', glow: 'rgba(0,164,239,0.30)',
         tag: 'Azure · OpenAI', status: '참여 중',
         desc: 'Azure 크레딧 + OpenAI API 액세스 + GitHub Enterprise + 기술 멘토링',
         href: 'https://www.microsoft.com/ko-kr/startups' },
     ];
+    const logoInner = (p) => p.img
+      ? '<img class="home-recognition__logo" src="/assets/partners/' + p.img + '" alt="' + Utils.esc(p.name) + '" loading="lazy">'
+      : this._partnerLogo(p.logo);
     el.innerHTML =
       '<div class="u-panel__header">' +
       '  <h2 class="u-panel__title">스타트업 프로그램</h2>' +
@@ -116,7 +121,7 @@ const HomeView = {
           '<a class="home-recognition__card" href="' + p.href + '" target="_blank" rel="noopener noreferrer"' +
             ' style="--bp:' + p.brand + ';--bpg:' + p.glow + '">' +
             '<span class="home-recognition__accent"></span>' +
-            '<div class="home-recognition__logo-wrap">' + this._partnerLogo(p.logo) + '</div>' +
+            '<div class="home-recognition__logo-wrap home-recognition__logo-wrap--' + p.chip + '">' + logoInner(p) + '</div>' +
             '<div class="home-recognition__body">' +
               '<div class="home-recognition__tag">' + Utils.esc(p.tag) +
                 (p.status ? ' <span class="home-recognition__status">' + Utils.esc(p.status) + '</span>' : '') + '</div>' +

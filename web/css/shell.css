@@ -631,7 +631,16 @@
   transform: scale(1.07);
   filter: drop-shadow(0 0 10px var(--bpg));
 }
-.home-recognition__logo { max-height: 100%; max-width: 100%; object-fit: contain; }
+/* 로고 칩 — light(흰 칩, 어두운 로고용) · dark(검은 칩, 밝은 로고용) */
+.home-recognition__logo-wrap--light {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.08);
+}
+.home-recognition__logo-wrap--dark {
+  background: linear-gradient(180deg, #0a0e17, #070a11);
+}
+.home-recognition__logo { max-height: 40px; max-width: 86%; object-fit: contain; transition: transform .3s var(--ease-out), filter .3s var(--ease-out); }
+.home-recognition__card:hover .home-recognition__logo { transform: scale(1.06); }
 
 .home-recognition__body { display: flex; flex-direction: column; gap: 4px; }
 .home-recognition__tag {
