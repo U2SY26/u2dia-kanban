@@ -844,3 +844,51 @@ body {
     var(--card) !important;
   border-top-color: rgba(75,202,129,0.40) !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   타이포그래피 위계 — 4단계 (Display / Title / Body / Caption)
+   원칙: 숫자=크고 bold·tight, 라벨=작고 muted·uppercase → 대비 극대화
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Caption: 모든 카드 라벨 통일 (절제) ── */
+.home-cost__label, .home-stat__label, .home-metric__label,
+.bill-kpi__label, .bill-hero__card-label, .usage-token-card__label,
+.home-kpi-label, .comp-card__track {
+  font-size: var(--fs-2xs) !important;   /* 10px */
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.09em !important;
+  color: var(--muted) !important;
+  line-height: 1.3 !important;
+}
+
+/* ── Display L: 핵심 지표 큰 숫자 (넓은 카드 — 임팩트) ── */
+.home-cost__value, .home-stat__value, .bill-hero__card-value {
+  font-size: var(--fs-3xl) !important;   /* 32px */
+  font-weight: 800 !important;
+  line-height: 1.0 !important;
+  letter-spacing: -0.025em !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ── Display M: KPI 값 (좁은 카드 — 균형) ── */
+.bill-kpi__value, .usage-token-card__value, .home-metric__value, .home-kpi-value {
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05 !important;
+}
+
+/* ── Title: 섹션·카드 제목 ── */
+.u-panel__title, .comp-card__title {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* ── Sub/Body: 보조 텍스트 ── */
+.home-cost__sub, .bill-kpi__sub, .bill-hero__card-sub, .usage-token-card__sub {
+  font-size: var(--fs-sm) !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.4 !important;
+}
