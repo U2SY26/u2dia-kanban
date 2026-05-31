@@ -803,3 +803,44 @@ body {
 .comp-tags { display: flex; flex-wrap: wrap; gap: 7px; }
 .comp-tag { font-size: var(--fs-xs); color: var(--text-secondary); background: var(--surface-sunken); padding: 3px 10px; border-radius: 6px; }
 @media (max-width: 900px) { .comp-grid { grid-template-columns: 1fr; } }
+
+/* ════════════════════════════════════════════════════════════
+   입체 고급 카드 — glass(blur) 대신 상단 하이라이트 + 그라데이션.
+   단색 다크 배경에서 카드가 명확히 떠 보이게 (Linear/OpenClaw 스타일).
+   ════════════════════════════════════════════════════════════ */
+.home-kpi, .home-cost, .home-stat, .home-metric, .home-recognition__card,
+.comp-card, .bill-kpi, .bill-hero__card, .usage-token-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 64px),
+    var(--card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--line) !important;
+  border-top-color: rgba(255,255,255,0.11) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 16px rgba(0,0,0,0.18) !important;
+  transition: transform var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out) !important;
+}
+.home-kpi:hover, .home-cost:hover, .home-stat:hover, .home-metric:hover,
+.home-recognition__card:hover, .comp-card:hover, .bill-kpi:hover, .usage-token-card:hover {
+  border-color: rgba(27,150,255,0.45) !important;
+  border-top-color: var(--brand-light) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.34),
+              0 0 0 1px rgba(27,150,255,0.18),
+              0 0 24px -6px rgba(27,150,255,0.28) !important;
+  transform: translateY(-3px) !important;
+}
+/* 강조(accent) 카드 — 상단 그라데이션을 브랜드 틴트로 */
+.bill-hero__card--accent, .bill-kpi--accent {
+  background:
+    linear-gradient(180deg, rgba(27,150,255,0.12), rgba(255,255,255,0) 72px),
+    var(--card) !important;
+  border-top-color: rgba(27,150,255,0.40) !important;
+}
+.bill-hero__card--success {
+  background:
+    linear-gradient(180deg, rgba(75,202,129,0.12), rgba(255,255,255,0) 72px),
+    var(--card) !important;
+  border-top-color: rgba(75,202,129,0.40) !important;
+}
