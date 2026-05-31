@@ -16,11 +16,11 @@ const HomeView = {
     mainEl.innerHTML =
       '<div class="shell-main__content home-row">' +
       '  <div id="homeWelcome" class="home-welcome"></div>' +
-      '  <div id="homeTopRow" class="home-grid-top">' +
-      '    <div id="homeYudiCard" class="u-panel"></div>' +
-      '    <div id="homeKpiCard" class="u-panel"></div>' +
+      '  <div id="homeYudiCard" class="u-panel"></div>' +              // 비용·사용량 — 전체폭
+      '  <div id="homeTopRow" class="home-grid-half">' +
+      '    <div id="homeKpiCard" class="u-panel"></div>' +              // 오늘의 요약
+      '    <div id="homeYudiMetricsCard" class="u-panel home-yudi-metrics-panel"></div>' +  // 시스템·GPU
       '  </div>' +
-      '  <div id="homeYudiMetricsCard" class="u-panel home-yudi-metrics-panel"></div>' +
       '  <div id="homeRecognitionCard" class="u-panel home-recognition-panel"></div>' +
       '  <div id="homeTeamsCard" class="u-panel"></div>' +
       '  <div id="homeLowerRow" class="home-grid-bottom">' +
@@ -169,6 +169,11 @@ const HomeView = {
       '      <div class="home-cost__label">\ucd94\uc815 \ud1a0\ud070</div>' +
       '      <div class="home-cost__value home-cost__value--accent">' + tk(estTok) + '</div>' +
       '      <div class="home-cost__sub">\uc560\ub4dc\uc628 ' + usd(addonUsd) + ' \uae30\uc900</div>' +
+      '    </div>' +
+      '    <div class="home-cost" onclick="Router.navigate(\'#/billing\')">' +
+      '      <div class="home-cost__label">\uc560\ub4dc\uc628 \ud06c\ub808\ub527</div>' +
+      '      <div class="home-cost__value">' + wonShort(addonUsd * rate) + '</div>' +
+      '      <div class="home-cost__sub">' + usd(addonUsd) + ' \ub204\uc801 \ucda9\uc804</div>' +
       '    </div>' +
       '  </div>' +
       '</div>';

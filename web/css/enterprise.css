@@ -741,7 +741,7 @@ body {
 }
 
 /* ── 홈 고도화: 비용 요약 / 진행 숫자 / 텍스트 로고 (2026-05-31) ── */
-.home-cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.home-cost-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
 .home-cost {
   background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-glass); border-radius: var(--radius-xl);
   padding: 14px 16px; cursor: pointer; transition: border-color .16s, transform .16s, background .16s;
@@ -892,3 +892,11 @@ body {
   color: var(--text-secondary) !important;
   line-height: 1.4 !important;
 }
+
+/* 레이아웃 균형 — 오늘의 요약 + 시스템·GPU 나란히 (빈 공간 제거) */
+.home-grid-half { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+@media (max-width: 1100px) {
+  .home-grid-half { grid-template-columns: 1fr; }
+  .home-cost-grid { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 560px) { .home-cost-grid { grid-template-columns: 1fr !important; } }
