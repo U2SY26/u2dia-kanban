@@ -751,6 +751,18 @@ body {
 .home-cost__value { font-size: var(--fs-2xl); font-weight: 800; color: var(--text); line-height: 1.15; margin-top: 4px; }
 .home-cost__value--accent { color: var(--brand-light); }
 .home-cost__sub { font-size: var(--fs-sm); color: var(--text-secondary); margin-top: 4px; }
+.home-cost__value--accent { color: var(--brand-light) !important; }
+.home-cost__value--danger { color: var(--red-light) !important; }
+
+/* 진행 현황(운영) — 도넛 + 통일 .home-cost 카드 (반폭) */
+.home-ops-layout { display: grid; grid-template-columns: 150px 1fr; gap: var(--space-4); align-items: center; }
+.home-ops-donut { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.home-ops-donut svg.u-chart { width: 100%; max-width: 150px; height: auto; }
+.home-ops-donut__cap { font-size: var(--fs-xs); color: var(--muted); }
+.home-ops-donut__cap b { color: var(--green); font-variant-numeric: tabular-nums; }
+.home-ops-foot { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--line); font-size: var(--fs-xs); color: var(--text-secondary); }
+.home-ops-foot b { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .home-ops-layout { grid-template-columns: 1fr; } .home-ops-donut { margin-bottom: var(--space-2); } }
 
 .home-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .home-stat {
@@ -895,7 +907,7 @@ body {
 
 /* 레이아웃 균형 — 오늘의 요약 + 시스템·GPU 나란히 (빈 공간 제거) */
 .home-grid-half { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
-@media (max-width: 1100px) {
+@media (max-width: 960px) {
   .home-grid-half { grid-template-columns: 1fr; }
   .home-cost-grid { grid-template-columns: 1fr 1fr !important; }
 }
@@ -952,7 +964,7 @@ svg.u-chart { display: block; max-width: 100%; }
   font-size: var(--fs-2xs); color: var(--muted); margin-bottom: 4px;
   text-transform: uppercase; letter-spacing: .08em;
 }
-.home-gauge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.home-gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: var(--space-3); }
 .home-gauge {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: 12px 6px 13px; border: 1px solid var(--line); border-radius: var(--radius-lg);
@@ -980,7 +992,7 @@ svg.u-chart { display: block; max-width: 100%; }
 }
 
 /* ── 시스템 메트릭 페이지 (트레이 vital 전체) ── */
-.met-gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.met-gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--space-3); }
 .met-gauge {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: 14px 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-lg);

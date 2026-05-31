@@ -555,7 +555,7 @@
 .home-recognition-panel { margin-top: var(--space-3); }
 .home-recognition {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
   gap: var(--space-3);
 }
 .home-recognition__card {
@@ -680,12 +680,7 @@
   .home-recognition__card:hover { transform: none; }
 }
 
-@media (max-width: 1024px) {
-  .home-recognition { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 600px) {
-  .home-recognition { grid-template-columns: 1fr; }
-}
+/* .home-recognition 는 auto-fit minmax 로 컨테이너 폭에 따라 자동 reflow (태블릿/모바일) */
 
 /* ── Sidebar resizer + collapse toggle ── */
 .shell-rail__spacer { flex: 1; }

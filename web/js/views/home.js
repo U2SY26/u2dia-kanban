@@ -18,10 +18,9 @@ const HomeView = {
       '  <div id="homeWelcome" class="home-welcome"></div>' +
       '  <div id="homeYudiCard" class="u-panel"></div>' +              // 비용·사용량 — 전체폭
       '  <div id="homeTopRow" class="home-grid-half">' +
-      '    <div id="homeKpiCard" class="u-panel"></div>' +              // 오늘의 요약
+      '    <div id="homeTeamsCard" class="u-panel"></div>' +           // 진행 현황 (운영)
       '    <div id="homeYudiMetricsCard" class="u-panel home-yudi-metrics-panel"></div>' +  // 시스템·GPU
       '  </div>' +
-      '  <div id="homeTeamsCard" class="u-panel"></div>' +             // 진행 현황 (운영 데이터)
       '  <div id="homeLowerRow" class="home-grid-bottom">' +
       '    <div id="homeFeedCard" class="u-panel"></div>' +
       '    <div id="homeHeatmapCard" class="u-panel"></div>' +
@@ -37,7 +36,6 @@ const HomeView = {
     this._renderWelcome();
     await Promise.all([
       this._renderYudi(),
-      this._renderKpi(),
       this._renderYudiMetrics(),
       this._renderTeams(),
       this._renderHeatmap()
@@ -416,6 +414,7 @@ const HomeView = {
     const gInProg = Math.max(0, gTotal - gDone - blocked);
     const gPct = gTotal>0 ? Math.round(gDone/gTotal*100) : pct;
     const activeTeams = stats.active_teams || active;
+    const agents = stats.working_agents || 0;
     const num = (n) => Number(n||0).toLocaleString('ko-KR');
 
     const donutSvg = (typeof SvgCharts!=='undefined')
@@ -423,8 +422,16 @@ const HomeView = {
           { label:'\uc644\ub8cc', value: gDone, color:'var(--chart-green)' },
           { label:'\uc9c4\ud589', value: gInProg, color:'var(--chart-blue)' },
           { label:'Blocked', value: blocked, color:'var(--red)' }
-        ], { size: 158, hole: 0.66 })
+        ], { size: 150, hole: 0.66 })
       : '';
+
+    // \ube44\uc6a9 \ud328\ub110\uacfc \ub3d9\uc77c\ud55c .home-cost \uce74\ub4dc\ub85c \ud1b5\uc77c
+    const card = (label, value, sub, mod) =>
+      '<div class="home-cost" onclick="Router.navigate(\'#/teams\')">' +
+      '  <div class="home-cost__label">' + label + '</div>' +
+      '  <div class="home-cost__value' + (mod ? ' home-cost__value--' + mod : '') + '">' + value + '</div>' +
+      (sub ? '  <div class="home-cost__sub">' + sub + '</div>' : '') +
+      '</div>';
 
     el.innerHTML =
       '<div class="u-panel__header">' +
@@ -432,15 +439,18 @@ const HomeView = {
       '  <button class="u-btn u-btn--sm u-btn--ghost" onclick="Router.navigate(\'#/teams\')">\ud300 \ubcf4\uae30 \u203a</button>' +
       '</div>' +
       '<div class="u-panel__body">' +
-      '  <div class="home-teams-layout">' +
-      '    <div class="home-teams-donut">' + donutSvg + '</div>' +
-      '    <div class="home-stat-grid">' +
-      '      <div class="home-stat" onclick="Router.navigate(\'#/teams\')"><div class="home-stat__value">' + num(activeTeams) + '</div><div class="home-stat__label">\uc9c4\ud589 \uc911\uc778 \ud300</div></div>' +
-      '      <div class="home-stat"><div class="home-stat__value">' + num(gInProg) + '</div><div class="home-stat__label">\uc9c4\ud589 \ud2f0\ucf13</div></div>' +
-      '      <div class="home-stat"><div class="home-stat__value home-stat__value--ok">' + gPct + '<small>%</small></div><div class="home-stat__label">\uc644\ub8cc\uc728</div></div>' +
-      '      <div class="home-stat"><div class="home-stat__value' + (blocked>0?' home-stat__value--danger':'') + '">' + num(blocked) + '</div><div class="home-stat__label">Blocked</div></div>' +
+      '  <div class="home-ops-layout">' +
+      '    <div class="home-ops-donut">' + donutSvg +
+      '      <div class="home-ops-donut__cap">\uc644\ub8cc\uc728 <b>' + gPct + '%</b></div>' +
+      '    </div>' +
+      '    <div class="home-cost-kpis">' +
+            card('\uc644\ub8cc \ud2f0\ucf13', num(gDone), gPct + '% \uc644\ub8cc') +
+            card('\uc9c4\ud589 \ud2f0\ucf13', num(gInProg), '') +
+            card('\ud65c\uc131 \uc5d0\uc774\uc804\ud2b8', num(agents), '', 'accent') +
+            card('Blocked', num(blocked), '', blocked > 0 ? 'danger' : '') +
       '    </div>' +
       '  </div>' +
+      '  <div class="home-ops-foot">\uc9c4\ud589 \ud300 <b>' + num(activeTeams) + '</b> \u00b7 \uc544\uce74\uc774\ube0c ' + (stats.archived_teams||0) + ' \u00b7 \uc804\uccb4 \uc9c4\ud589\ub960 <b>' + gPct + '%</b></div>' +
       '</div>';
   },
 
