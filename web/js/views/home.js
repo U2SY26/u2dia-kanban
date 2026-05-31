@@ -46,38 +46,65 @@ const HomeView = {
     this._renderFeed();
   },
 
+  // 브랜드 인라인 SVG 로고 (외부 의존성 0 · 다크테마 대비 보장 · 벡터 선명)
+  _partnerLogo(key) {
+    const L = {
+      nvidia:
+        '<svg class="home-recognition__logo-svg" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NVIDIA">' +
+        '<text x="110" y="33" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="800" fill="#76B900" letter-spacing="1.5">NVIDIA</text></svg>',
+      aws:
+        '<svg class="home-recognition__logo-svg" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AWS">' +
+        '<text x="100" y="30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="800" fill="#FF9900" letter-spacing="3">aws</text>' +
+        '<path d="M66 42 C 84 53, 116 53, 134 42" fill="none" stroke="#FF9900" stroke-width="4" stroke-linecap="round"/>' +
+        '<path d="M129 38 l7 4 -5 6" fill="none" stroke="#FF9900" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      microsoft:
+        '<svg class="home-recognition__logo-svg" viewBox="0 0 230 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Microsoft">' +
+        '<rect x="42" y="13" width="11" height="11" fill="#F25022"/><rect x="55" y="13" width="11" height="11" fill="#7FBA00"/>' +
+        '<rect x="42" y="26" width="11" height="11" fill="#00A4EF"/><rect x="55" y="26" width="11" height="11" fill="#FFB900"/>' +
+        '<text x="74" y="33" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="600" fill="#E8EAED">Microsoft</text></svg>',
+      google:
+        '<svg class="home-recognition__logo-svg" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Google Cloud">' +
+        '<text x="18" y="33" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700">' +
+        '<tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC05">o</tspan>' +
+        '<tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e</tspan>' +
+        '<tspan fill="#9AA0A6" dx="7">Cloud</tspan></text></svg>',
+      lambda:
+        '<svg class="home-recognition__logo-svg" viewBox="0 0 200 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lambda">' +
+        '<text x="34" y="35" text-anchor="middle" font-family="Georgia,serif" font-size="32" font-weight="700" fill="#ffffff">λ</text>' +
+        '<text x="58" y="33" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#C9CDD6" letter-spacing="0.5">Lambda</text></svg>'
+    };
+    return L[key] || '';
+  },
+
   _renderRecognition() {
     const el = document.getElementById('homeRecognitionCard');
     if (!el) return;
     const partners = [
-      { logo: 'NVIDIA', name: 'NVIDIA Inception',
+      { logo: 'nvidia', name: 'NVIDIA Inception', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
         tag: 'AI Startup Program', status: '참여 중',
         desc: 'NVIDIA의 최신 기술과 생태계를 활용하여 더욱 강력한 제조 AI 솔루션을 개발',
         href: 'https://www.nvidia.com/en-us/startups/' },
-      { img: 'nvidia-innovation-lab.png', name: 'NVIDIA Innovation Lab',
+      { logo: 'nvidia', name: 'NVIDIA Innovation Lab', brand: '#76B900', glow: 'rgba(118,185,0,0.30)',
         tag: 'H100 8-GPU · Brev', status: '선정',
         desc: '60일간 H100 8-GPU 노드를 NVIDIA Brev 플랫폼으로 제공 — 제조 AI 파인튜닝·추론 벤치마킹',
         href: 'https://www.nvidia.com/en-us/data-center/innovation-lab/' },
-      { logo: 'aws', name: 'AWS Startups',
+      { logo: 'aws', name: 'AWS Startups', brand: '#FF9900', glow: 'rgba(255,153,0,0.30)',
         tag: 'Bedrock · SageMaker', status: '참여 중',
         desc: '클라우드 크레딧 + 기술 멘토링 + AI/ML 도구 — Amazon Bedrock·SageMaker·EKS 활용',
-        href: 'https://aws.amazon.com/startups/' },
-      { img: 'lambda.png', name: 'Lambda Startup Program',
+        href: 'https://aws.amazon.com/startups/programs?lang=ko' },
+      { logo: 'lambda', name: 'Lambda Startup Program', brand: '#7C5CFC', glow: 'rgba(124,92,252,0.30)',
         tag: 'GPU Cloud', status: '참여 중',
         desc: '단일 GPU 부터 수십만 GPU 까지 — 제조 AI 모델 학습·서빙용 슈퍼인텔리전스 인프라',
         href: 'https://lambda.ai/service/gpu-cloud' },
-      { img: 'google-cloud-startups.png', name: 'Google Cloud for Startups',
+      { logo: 'google', name: 'Google Cloud for Startups', brand: '#4285F4', glow: 'rgba(66,133,244,0.30)',
         tag: 'Vertex AI · BigQuery', status: '참여 중',
         desc: 'Vertex AI · BigQuery · GKE 활용 — 제조 데이터 안전 저장·분석 + 글로벌 확장 가속',
-        href: 'https://cloud.google.com/startup' },
-      { img: 'microsoft-for-startups.png', name: 'Microsoft for Startups',
+        href: 'https://cloud.google.com/startup?hl=ko' },
+      { logo: 'microsoft', name: 'Microsoft for Startups', brand: '#00A4EF', glow: 'rgba(0,164,239,0.30)',
         tag: 'Azure · OpenAI', status: '참여 중',
         desc: 'Azure 크레딧 + OpenAI API 액세스 + GitHub Enterprise + 기술 멘토링',
-        href: 'https://www.microsoft.com/en-us/startups' },
+        href: 'https://www.microsoft.com/ko-kr/startups' },
     ];
-    const logoHtml = (p) => p.img
-      ? '<img class="home-recognition__logo" src="/assets/partners/' + p.img + '" alt="' + Utils.esc(p.name) + '" loading="lazy">'
-      : '<span class="home-recognition__logo-text">' + Utils.esc(p.logo || p.name) + '</span>';
     el.innerHTML =
       '<div class="u-panel__header">' +
       '  <h2 class="u-panel__title">스타트업 프로그램</h2>' +
@@ -86,14 +113,17 @@ const HomeView = {
       '<div class="u-panel__body">' +
       '  <div class="home-recognition">' +
         partners.map(p =>
-          '<a class="home-recognition__card" href="' + p.href + '" target="_blank" rel="noopener noreferrer">' +
-            '<div class="home-recognition__logo-wrap">' + logoHtml(p) + '</div>' +
+          '<a class="home-recognition__card" href="' + p.href + '" target="_blank" rel="noopener noreferrer"' +
+            ' style="--bp:' + p.brand + ';--bpg:' + p.glow + '">' +
+            '<span class="home-recognition__accent"></span>' +
+            '<div class="home-recognition__logo-wrap">' + this._partnerLogo(p.logo) + '</div>' +
             '<div class="home-recognition__body">' +
               '<div class="home-recognition__tag">' + Utils.esc(p.tag) +
                 (p.status ? ' <span class="home-recognition__status">' + Utils.esc(p.status) + '</span>' : '') + '</div>' +
               '<div class="home-recognition__name">' + Utils.esc(p.name) + '</div>' +
               '<div class="home-recognition__desc">' + Utils.esc(p.desc) + '</div>' +
             '</div>' +
+            '<div class="home-recognition__visit">방문하기 <span class="home-recognition__arrow">↗</span></div>' +
           '</a>'
         ).join('') +
       '  </div>' +
@@ -471,42 +501,72 @@ const HomeView = {
     });
   },
 
+  // GitHub \ucee8\ud2b8\ub9ac\ubdf0\uc158 \uadf8\ub798\ud504 \uc2a4\ud0c0\uc77c \u2014 \uc77c\ubcc4 \uce74\uc6b4\ud2b8(weekly API), 7\ud589 \u00d7 \uc8fc \uceec\ub7fc
   async _renderHeatmap() {
     const el = document.getElementById('homeHeatmapCard');
     if (!el) return;
     el.innerHTML =
-      '<div class="u-panel__header"><h2 class="u-panel__title">Activity 48h</h2></div>' +
-      '<div class="u-panel__body home-heatmap__body" id="homeHeatmapBody"></div>';
+      '<div class="u-panel__header">' +
+      '  <h2 class="u-panel__title">\ud65c\ub3d9 \uadf8\ub798\ud504</h2>' +
+      '  <span class="u-badge" id="ghTotalBadge">\u2014</span>' +
+      '</div>' +
+      '<div class="u-panel__body" id="homeHeatmapBody"></div>';
     const body = document.getElementById('homeHeatmapBody');
     try {
-      const res = await API.heatmap10min();
-      // API \ub294 data \ub97c \uac1d\uccb4({ "2026-05-30T11:30": 9, ... }) \ub610\ub294 \ubc30\uc5f4\ub85c \ubc18\ud658 \u2014 \ub458 \ub2e4 \uc815\uaddc\ud654
-      const raw = (res && res.data) || [];
-      let buckets;
-      if (Array.isArray(raw)) {
-        buckets = raw.map(b => (typeof b === 'number' ? { ts:'', count:b } : { ts:(b.ts||b.time||''), count:(b.count||b.value||0) }));
-      } else {
-        buckets = Object.keys(raw).sort().map(k => ({ ts: k, count: Number(raw[k]) || 0 }));
+      const res = await API.get('/api/supervisor/heatmap?mode=weekly');
+      const data = (res && res.data) || {};
+
+      const WEEKS = 27;                       // \uc57d 6\uac1c\uc6d4
+      const pad = (n) => String(n).padStart(2,'0');
+      const fmt = (d) => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+      const today = new Date(); today.setHours(0,0,0,0);
+      const end = new Date(today); end.setDate(end.getDate() + (6 - today.getDay()));  // \uc774\ubc88 \uc8fc \ud1a0\uc694\uc77c
+      const start = new Date(end); start.setDate(start.getDate() - (WEEKS*7 - 1));     // \uc2dc\uc791 \uc77c\uc694\uc77c
+
+      // \uc77c\uc790 \uc21c\ud68c (\uc2dc\uac04\uc21c = \uadf8\ub9ac\ub4dc column-major \ucc44\uc6c0 \uc21c\uc11c\uc640 \uc77c\uce58)
+      const days = [];
+      let total = 0, max = 0, activeDays = 0;
+      for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate()+1)) {
+        const key = fmt(cur);
+        const count = Number(data[key] || 0);
+        days.push({ key, count, month: cur.getMonth(), date: cur.getDate(), dow: cur.getDay(), future: cur > today });
+        if (!('future' in days[days.length-1]) || cur <= today) { total += count; if (count > max) max = count; if (count>0) activeDays++; }
       }
-      if (!buckets.length) {
-        body.innerHTML = '<div class="u-empty"><div class="u-empty__desc">\ub370\uc774\ud130 \uc5c6\uc74c</div></div>';
-        return;
-      }
-      const max = Math.max(1, ...buckets.map(b => b.count));
-      const total = buckets.reduce((a,b)=>a+b.count, 0);
-      const peak = buckets.reduce((p,b)=> b.count>p.count ? b : p, buckets[0]);
-      const html = buckets.slice(-288).map(b => {
-        const intensity = Math.min(1, b.count / max);
-        const hm = String(b.ts).slice(5,16).replace('T',' ');
-        return '<div class="home-heatmap__cell" style="--heat:' + intensity.toFixed(2) + '" title="' + Utils.esc(hm) + ' \u00b7 ' + b.count + '\uac74"></div>';
+      const level = (c) => { if (c <= 0) return 0; const r = c / (max||1); return r > 0.75 ? 4 : r > 0.5 ? 3 : r > 0.25 ? 2 : 1; };
+
+      // \uc140 (\uc2dc\uac04\uc21c \u2192 grid-auto-flow:column 7\ud589\uc73c\ub85c \uc790\ub3d9 \uc8fc \uc815\ub82c)
+      const cells = days.map(d => {
+        if (d.future) return '<div class="gh-cell" style="visibility:hidden"></div>';
+        const lv = level(d.count);
+        return '<div class="gh-cell' + (lv ? ' gh-cell--l'+lv : '') + '" title="' + d.key + ' \u00b7 ' + d.count + '\uac74"></div>';
       }).join('');
+
+      // \uc6d4 \ub77c\ubca8 (\uac01 \uc8fc\uc758 \uccab\ub0a0 \uae30\uc900, \uc6d4\uc774 \ubc14\ub00c\uba74 \ud45c\uae30)
+      const weeks = Math.ceil(days.length / 7);
+      let prevMonth = -1; const monthSpans = [];
+      for (let w = 0; w < weeks; w++) {
+        const first = days[w*7];
+        if (first && first.month !== prevMonth) { monthSpans.push('<span class="gh-heatmap__month">' + (first.month+1) + '\uc6d4</span>'); prevMonth = first.month; }
+        else monthSpans.push('<span class="gh-heatmap__month"></span>');
+      }
+
+      const weekdays = ['','\uc6d4','','\uc218','','\uae08',''].map(w => '<span>' + w + '</span>').join('');
+
       body.innerHTML =
-        '<div class="home-heatmap__grid">' + html + '</div>' +
-        '<div class="home-heatmap__foot">' +
-        '  <span>\ucd1d <b>' + total.toLocaleString('ko-KR') + '</b>\uac74 \u00b7 48h</span>' +
-        '  <span class="home-heatmap__scale">low <i style="--heat:0.15"></i><i style="--heat:0.4"></i><i style="--heat:0.7"></i><i style="--heat:1"></i> high</span>' +
-        '  <span>\ud53c\ud06c <b>' + peak.count + '</b>\uac74 @' + Utils.esc(String(peak.ts).slice(5,16).replace('T',' ')) + '</span>' +
+        '<div class="gh-heatmap">' +
+        '  <div class="gh-heatmap__weekday">' + weekdays + '</div>' +
+        '  <div class="gh-heatmap__main">' +
+        '    <div class="gh-heatmap__months" style="grid-template-columns:repeat(' + weeks + ',11px)">' + monthSpans.join('') + '</div>' +
+        '    <div class="gh-heatmap__grid">' + cells + '</div>' +
+        '    <div class="gh-heatmap__legend">Less <i class="gh-cell"></i><i class="gh-cell gh-cell--l1"></i><i class="gh-cell gh-cell--l2"></i><i class="gh-cell gh-cell--l3"></i><i class="gh-cell gh-cell--l4"></i> More</div>' +
+        '  </div>' +
+        '</div>' +
+        '<div class="gh-heatmap__stat">' +
+        '  <span>\ucd5c\uadfc ' + WEEKS + '\uc8fc \u00b7 <b>' + total.toLocaleString('ko-KR') + '</b>\uac74</span>' +
+        '  <span>\ud65c\ub3d9\uc77c <b>' + activeDays + '</b>\uc77c \u00b7 \uc77c \ucd5c\ub300 <b>' + max.toLocaleString('ko-KR') + '</b>\uac74</span>' +
         '</div>';
+      const badge = document.getElementById('ghTotalBadge');
+      if (badge) badge.textContent = total.toLocaleString('ko-KR') + '\uac74';
     } catch(e) {
       body.innerHTML = '<div class="u-empty"><div class="u-empty__desc">\ub85c\ub529 \uc2e4\ud328</div></div>';
     }

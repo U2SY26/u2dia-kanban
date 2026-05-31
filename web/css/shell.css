@@ -559,37 +559,80 @@
   gap: var(--space-3);
 }
 .home-recognition__card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3);
-  background: linear-gradient(135deg, #0a0e16 0%, #0f172a 100%);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 70px),
+    linear-gradient(135deg, #0c111b 0%, #0f1626 100%);
   border: 1px solid var(--line, #1e293b);
-  border-radius: 10px;
+  border-top-color: rgba(255,255,255,0.10);
+  border-radius: var(--radius-xl);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 16px rgba(0,0,0,0.18);
+  transition: transform .26s var(--ease-out), border-color .26s var(--ease-out), box-shadow .26s var(--ease-out);
 }
+/* 브랜드 색 방사 글로우 (배경) */
+.home-recognition__card::after {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(120% 78% at 50% -18%, var(--bpg, transparent), transparent 62%);
+  opacity: 0; transition: opacity .3s var(--ease-out); pointer-events: none;
+}
+/* 샤인 스윕 — 호버 시 대각선 광택이 카드를 가로지름 */
+.home-recognition__card::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 55%; z-index: 1;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.10) 50%, transparent);
+  transform: translateX(-185%) skewX(-18deg);
+  transition: transform .75s var(--ease-out); pointer-events: none;
+}
+/* 상단 브랜드 액센트 바 — 호버 시 좌→우로 채워짐 */
+.home-recognition__accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 4;
+  background: var(--bp, var(--brand));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .35s var(--ease-out);
+}
+.home-recognition__logo-wrap,
+.home-recognition__body,
+.home-recognition__visit { position: relative; z-index: 2; }
+
 .home-recognition__card:hover {
-  transform: translateY(-2px);
-  border-color: var(--brand-light, #7dd3fc);
-  box-shadow: 0 6px 18px rgba(125, 211, 252, 0.10);
+  transform: translateY(-5px);
+  border-color: var(--bp, var(--brand-light));
+  box-shadow: 0 18px 38px -12px var(--bpg, rgba(0,0,0,0.4)), 0 0 0 1px var(--bp, transparent) inset;
 }
+.home-recognition__card:hover::after { opacity: 1; }
+.home-recognition__card:hover::before { transform: translateX(285%) skewX(-18deg); }
+.home-recognition__card:hover .home-recognition__accent { transform: scaleX(1); }
+
 .home-recognition__logo-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 64px;
-  background: #000;
-  border-radius: 6px;
+  height: 60px;
+  background: linear-gradient(180deg, #0a0e17, #070a11);
+  border-radius: var(--radius-md);
   padding: 8px 12px;
-  border: 1px solid #1e293b;
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  transition: border-color .26s var(--ease-out);
 }
-.home-recognition__logo {
-  max-height: 100%;
-  max-width: 100%;
-  object-fit: contain;
+.home-recognition__logo-svg {
+  width: auto; height: 38px; max-width: 86%;
+  transition: transform .3s var(--ease-out), filter .3s var(--ease-out);
 }
+.home-recognition__card:hover .home-recognition__logo-wrap { border-color: var(--bp); }
+.home-recognition__card:hover .home-recognition__logo-svg {
+  transform: scale(1.07);
+  filter: drop-shadow(0 0 10px var(--bpg));
+}
+.home-recognition__logo { max-height: 100%; max-width: 100%; object-fit: contain; }
+
 .home-recognition__body { display: flex; flex-direction: column; gap: 4px; }
 .home-recognition__tag {
   font-size: 10px;
@@ -608,6 +651,24 @@
   font-size: 12px;
   color: var(--text-muted-new, #94a3b8);
   line-height: 1.5;
+}
+/* 방문 힌트 — 호버 시 슬라이드 인 */
+.home-recognition__visit {
+  margin-top: auto; padding-top: 8px;
+  font-size: 11px; font-weight: 700; color: var(--bp, var(--brand-light));
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .25s var(--ease-out), transform .25s var(--ease-out);
+}
+.home-recognition__card:hover .home-recognition__visit { opacity: 1; transform: translateY(0); }
+.home-recognition__arrow { display: inline-block; transition: transform .25s var(--ease-out); }
+.home-recognition__card:hover .home-recognition__arrow { transform: translate(2px, -2px); }
+@media (prefers-reduced-motion: reduce) {
+  .home-recognition__card,
+  .home-recognition__card::before,
+  .home-recognition__logo-svg,
+  .home-recognition__accent,
+  .home-recognition__visit { transition: none; }
+  .home-recognition__card:hover { transform: none; }
 }
 
 @media (max-width: 1024px) {

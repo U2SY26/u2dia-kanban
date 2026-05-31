@@ -808,7 +808,7 @@ body {
    입체 고급 카드 — glass(blur) 대신 상단 하이라이트 + 그라데이션.
    단색 다크 배경에서 카드가 명확히 떠 보이게 (Linear/OpenClaw 스타일).
    ════════════════════════════════════════════════════════════ */
-.home-kpi, .home-cost, .home-stat, .home-metric, .home-recognition__card,
+.home-kpi, .home-cost, .home-stat, .home-metric,
 .comp-card, .bill-kpi, .bill-hero__card, .usage-token-card {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 64px),
@@ -823,7 +823,7 @@ body {
               box-shadow var(--dur-base) var(--ease-out) !important;
 }
 .home-kpi:hover, .home-cost:hover, .home-stat:hover, .home-metric:hover,
-.home-recognition__card:hover, .comp-card:hover, .bill-kpi:hover, .usage-token-card:hover {
+.comp-card:hover, .bill-kpi:hover, .usage-token-card:hover {
   border-color: rgba(27,150,255,0.45) !important;
   border-top-color: var(--brand-light) !important;
   box-shadow: 0 12px 28px rgba(0,0,0,0.34),
@@ -979,7 +979,56 @@ svg.u-chart { display: block; max-width: 100%; }
   .home-teams-layout .home-stat-grid { grid-template-columns: 1fr 1fr; }
 }
 
-/* 히트맵 범례·통계 푸터 */
+/* ── 시스템 메트릭 페이지 (트레이 vital 전체) ── */
+.met-gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.met-gauge {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 14px 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 44px), var(--card);
+}
+.met-gauge svg.u-chart { width: 100%; max-width: 124px; height: auto; }
+.met-gauge__label { font-size: var(--fs-xs); font-weight: 700; color: var(--text); margin-top: 2px; }
+.met-gauge__sub { font-size: var(--fs-2xs); color: var(--muted); margin-top: 2px; }
+.met-sub-title {
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); margin: var(--space-4) 0 var(--space-2);
+}
+.met-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); }
+.met-stat { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(13,15,20,0.3); }
+.met-stat__k { font-size: var(--fs-2xs); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.met-stat__v { font-size: var(--fs-lg); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 3px; }
+.met-stat__v small { font-size: var(--fs-xs); color: var(--muted); font-weight: 500; }
+.met-temps { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.met-temp { display: flex; flex-direction: column; gap: 4px; min-width: 96px; flex: 1 1 96px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(13,15,20,0.3); }
+.met-temp__n { font-size: var(--fs-2xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.met-temp__v { font-size: var(--fs-md); font-weight: 700; font-variant-numeric: tabular-nums; }
+.met-temp__bar { height: 3px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.met-temp__bar > span { display: block; height: 100%; border-radius: inherit; }
+@media (max-width: 760px) { .met-gauges { grid-template-columns: 1fr 1fr; } }
+
+/* ── 홈 Activity 히트맵 — GitHub 컨트리뷰션 스타일 ── */
+.gh-heatmap { display: flex; gap: 10px; align-items: flex-start; overflow-x: auto; padding: 2px 0; }
+.gh-heatmap__weekday { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; padding-top: 18px; }
+.gh-heatmap__weekday span { font-size: 9px; color: var(--muted); height: 11px; line-height: 11px; }
+.gh-heatmap__main { min-width: 0; }
+.gh-heatmap__months { display: flex; gap: 3px; height: 14px; margin-bottom: 4px; }
+.gh-heatmap__month { font-size: 9px; color: var(--muted); }
+.gh-heatmap__grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.gh-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--gh0); outline: 1px solid rgba(255,255,255,0.04); outline-offset: -1px; }
+.gh-cell--l1 { background: var(--gh1); }
+.gh-cell--l2 { background: var(--gh2); }
+.gh-cell--l3 { background: var(--gh3); }
+.gh-cell--l4 { background: var(--gh4); }
+.gh-cell:hover { outline: 1px solid var(--gh4); }
+.gh-heatmap__legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 10px; font-size: var(--fs-2xs); color: var(--muted); }
+.gh-heatmap__legend i { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.gh-heatmap__stat { display: flex; justify-content: space-between; margin-top: 8px; font-size: var(--fs-2xs); color: var(--muted); }
+.gh-heatmap__stat b { color: var(--text); font-variant-numeric: tabular-nums; }
+:root {
+  --gh0: #161b22; --gh1: #0e4429; --gh2: #006d32; --gh3: #26a641; --gh4: #39d353;
+}
+
+/* 히트맵 범례·통계 푸터 (레거시 10min) */
 .home-heatmap__foot {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
   margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);

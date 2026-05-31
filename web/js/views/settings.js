@@ -420,47 +420,103 @@ const SettingsView = {
   async _renderMetrics(el) {
     el.innerHTML = this._pageShell(
       '시스템 메트릭',
-      '서버 호스트의 실시간 리소스 사용량입니다. 3초마다 갱신됩니다.',
-      '<span class="u-badge" id="metRefresh" style="font-variant-numeric:tabular-nums">-- s</span>',
-      this._section('리소스', '호스트 OS 의 CPU·메모리·디스크 사용률.', 'activity',
+      '서버 호스트의 실시간 리소스 · GPU · 온도 vital 입니다. 3초마다 갱신됩니다.',
+      '<span class="u-badge u-badge--info" id="metRefresh" style="font-variant-numeric:tabular-nums">live · -- s</span>',
+      this._section('Vital', '호스트 OS · GPU · 온도 센서 · 노드 현황.', 'activity',
         '<div id="metBody" style="padding:var(--space-4) var(--section-card-pad-x)"><div class="u-skeleton u-skeleton--block"></div></div>'
       )
     );
     if (this._metricsTimer) clearInterval(this._metricsTimer);
+
     const tick = async () => {
       try {
-        const m = await API.get('/api/system/metrics');
+        const r = await API.get('/api/system/metrics');
+        const m = (r && r.metrics) || r || {};
         const target = document.getElementById('metBody');
         if (!target) { clearInterval(this._metricsTimer); return; }
-        const row = (label, pct, detail) => {
-          const severity = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
-          return (
-            '<div class="kpi-tile ' + (severity==='danger'?'kpi-tile--danger':'') + '">' +
-              '<div class="kpi-tile__label">' + Utils.esc(label) + '</div>' +
-              '<div class="kpi-tile__value">' + pct + '%</div>' +
-              '<div class="meter"><div class="meter__fill ' + (severity?'meter__fill--'+severity:'') + '" style="width:' + pct + '%"></div></div>' +
-              (detail ? '<div class="kpi-tile__trend">' + Utils.esc(detail) + '</div>' : '') +
-            '</div>'
-          );
-        };
-        target.innerHTML =
-          '<div class="kpi-grid">' +
-            row('CPU', Math.round(m.cpu_percent || 0), (m.cpu_count ? m.cpu_count + ' cores' : '')) +
-            row('메모리', Math.round(m.mem_percent || 0), (m.mem_used_gb ? m.mem_used_gb + ' / ' + m.mem_total_gb + ' GB' : '')) +
-            row('디스크', Math.round(m.disk_percent || 0), (m.disk_used_gb ? m.disk_used_gb + ' / ' + m.disk_total_gb + ' GB' : '')) +
-            (m.load_avg ? '<div class="kpi-tile kpi-tile--accent"><div class="kpi-tile__label">Load (1m)</div><div class="kpi-tile__value">' + m.load_avg + '</div></div>' : '') +
+
+        const round = (n) => Math.round(Number(n) || 0);
+        const gb = (mb) => (Number(mb || 0) / 1024).toFixed(1);
+        const tempColor = (t) => t >= 80 ? 'var(--red)' : t >= 65 ? 'var(--orange)' : t >= 50 ? 'var(--yellow)' : 'var(--green)';
+        const G = (typeof SvgCharts !== 'undefined');
+
+        const gauge = (label, val, sub) =>
+          '<div class="met-gauge">' +
+            (G ? SvgCharts.gauge(val, { size: 120, thresholds: [70, 90] }) : '<div style="font-size:24px;font-weight:800">' + round(val) + '%</div>') +
+            '<div class="met-gauge__label">' + label + '</div>' +
+            '<div class="met-gauge__sub">' + sub + '</div>' +
           '</div>';
-      } catch(e) {
+        const stat = (k, v, sub) =>
+          '<div class="met-stat"><div class="met-stat__k">' + k + '</div>' +
+          '<div class="met-stat__v">' + v + (sub ? ' <small>' + sub + '</small>' : '') + '</div></div>';
+
+        // 리소스 게이지 (CPU · RAM · 디스크 · GPU)
+        const memPct = round(m.memory_percent);
+        const diskPct = round(m.disk_percent);
+        const gpuUtil = round(m.gpu_util);
+        const gauges =
+          '<div class="met-gauges">' +
+            gauge('CPU', round(m.cpu_percent), (m.load_avg ? 'load ' + (m.load_avg[0] != null ? m.load_avg[0] : '-') : '사용률')) +
+            gauge('메모리', memPct, gb(m.memory_used_mb) + ' / ' + gb(m.memory_total_mb) + ' GB') +
+            gauge('디스크', diskPct, round(m.disk_used_gb) + ' / ' + round(m.disk_total_gb) + ' GB') +
+            gauge('GPU', gpuUtil, Utils.esc((m.gpu_name || 'GPU').replace('NVIDIA GeForce ', ''))) +
+          '</div>';
+
+        // GPU 상세
+        const vramPct = round(m.gpu_vram_percent != null ? m.gpu_vram_percent : (m.gpu_vram_total_mb ? m.gpu_vram_used_mb / m.gpu_vram_total_mb * 100 : 0));
+        const powPct = m.gpu_power_max_w ? round(m.gpu_power_w / m.gpu_power_max_w * 100) : 0;
+        const gpuBlock =
+          '<div class="met-sub-title">GPU · ' + Utils.esc((m.gpu_name || '-').replace('NVIDIA GeForce ', '')) + '</div>' +
+          '<div class="met-stats">' +
+            stat('사용률', gpuUtil + '%') +
+            stat('온도', '<span style="color:' + tempColor(round(m.gpu_temp)) + '">' + round(m.gpu_temp) + '°</span>') +
+            stat('VRAM', gb(m.gpu_vram_used_mb) + ' / ' + gb(m.gpu_vram_total_mb), 'GB · ' + vramPct + '%') +
+            stat('전력', round(m.gpu_power_w) + ' / ' + round(m.gpu_power_max_w), 'W · ' + powPct + '%') +
+            stat('팬', round(m.gpu_fan_percent) + '%') +
+          '</div>';
+
+        // 온도 센서
+        const temps = Array.isArray(m.temps) ? m.temps : [];
+        const tempBlock = temps.length ?
+          '<div class="met-sub-title">온도 센서 · ' + temps.length + '</div>' +
+          '<div class="met-temps">' +
+            temps.map(t => {
+              const tv = Number(t.temp) || 0;
+              return '<div class="met-temp"><div class="met-temp__n">' + Utils.esc(t.name) + '</div>' +
+                '<div class="met-temp__v" style="color:' + tempColor(tv) + '">' + tv.toFixed(1) + '°</div>' +
+                '<div class="met-temp__bar"><span style="width:' + Math.min(100, tv) + '%;background:' + tempColor(tv) + '"></span></div></div>';
+            }).join('') +
+          '</div>' : '';
+
+        // 호스트 · 네트워크 · 노드
+        const la = Array.isArray(m.load_avg) ? m.load_avg : [];
+        const hostBlock =
+          '<div class="met-sub-title">호스트 · 노드</div>' +
+          '<div class="met-stats">' +
+            stat('호스트', Utils.esc(m.hostname || '-'), Utils.esc(m.platform || '')) +
+            stat('Python', Utils.esc(m.python_version || '-')) +
+            stat('Load Avg', la.length ? la.map(x => Number(x).toFixed(1)).join(' · ') : '-', '1·5·15m') +
+            stat('DB 크기', (m.db_size_mb != null ? m.db_size_mb : 0) + '', 'MB') +
+            stat('활성 팀', round(m.active_teams), '팀') +
+            stat('활성 티켓', round(m.active_tickets), '티켓') +
+            stat('SSE 클라이언트', round(m.sse_clients)) +
+            stat('노드', round(m.node_count), gb(m.node_memory_mb) + 'GB') +
+            stat('네트워크', '↑' + round(m.net_sent_kb) + ' ↓' + round(m.net_recv_kb), 'KB/s') +
+          '</div>';
+
+        target.innerHTML = gauges + gpuBlock + tempBlock + hostBlock;
+      } catch (e) {
         const target = document.getElementById('metBody');
         if (target) target.innerHTML = '<div class="settings-empty">메트릭을 불러올 수 없습니다.</div>';
       }
     };
+
     await tick();
     let n = 3;
     this._metricsTimer = setInterval(() => {
       n -= 1;
       const b = document.getElementById('metRefresh');
-      if (b) b.textContent = n + ' s';
+      if (b) b.textContent = 'live · ' + n + ' s';
       if (n <= 0) { n = 3; tick(); }
     }, 1000);
   },
