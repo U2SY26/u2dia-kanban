@@ -30,7 +30,7 @@
 }
 
 .sb-header-title {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-muted);
@@ -46,7 +46,7 @@
   border: none;
   color: var(--brand);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-md);
   padding: 4px 6px;
   border-radius: var(--radius-sm);
   display: flex;
@@ -61,8 +61,8 @@
 .sb-badge {
   background: var(--brand-bg);
   color: var(--brand);
-  border-radius: 10px;
-  font-size: 10px;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-2xs);
   padding: 1px 6px;
   font-weight: 600;
 }
@@ -105,7 +105,7 @@
 .proj-icon.dir { color: var(--text-muted); }
 
 .proj-name {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text);
   flex: 1;
   overflow: hidden;
@@ -114,7 +114,7 @@
   font-weight: 500;
 }
 .proj-alias {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
   display: block;
 }
@@ -123,8 +123,8 @@
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   color: var(--text-muted);
-  border-radius: 10px;
-  font-size: 10px;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-2xs);
   padding: 1px 5px;
   flex-shrink: 0;
 }
@@ -149,7 +149,7 @@
 .team-item.active .team-item-name { color: var(--sidebar-active-text); }
 
 .team-item-name {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text);
   font-weight: 500;
   margin-bottom: 5px;
@@ -176,18 +176,18 @@
   transition: width 0.4s ease;
 }
 .team-pct {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
   min-width: 28px;
   text-align: right;
 }
 .team-tickets {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
 }
 
 .sb-section-label {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -197,42 +197,42 @@
 
 .sb-empty {
   padding: 20px 14px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   text-align: center;
 }
 
 /* ── 좌측 리스트 고도화: 그룹 접기 + 깔끔한 팀 카드 (2026-05-31) ── */
 .shell-list__count {
-  display: inline-block; font-size: 11px; font-weight: 700; color: var(--brand-light);
+  display: inline-block; font-size: var(--fs-xs); font-weight: 700; color: var(--brand-light);
   background: var(--brand-bg); padding: 0 7px; border-radius: 999px; margin-left: 4px; vertical-align: middle;
 }
 .shell-group {
   display: flex; align-items: center; gap: 7px; padding: 9px 12px; cursor: pointer;
-  user-select: none; transition: background .14s; border-radius: 7px; margin: 2px 6px;
+  user-select: none; transition: background .14s; border-radius: var(--radius-md); margin: 2px 6px;
 }
 .shell-group:hover { background: var(--card-hover); }
 .shell-group__chevron { color: var(--muted); transition: transform .18s ease; flex-shrink: 0; }
 .shell-group--open .shell-group__chevron { transform: rotate(90deg); }
 .shell-group__name {
-  flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  flex: 1; min-width: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--text-secondary);
   text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .shell-group__count {
-  font-size: 11px; font-weight: 700; color: var(--muted); background: var(--surface-sunken);
+  font-size: var(--fs-xs); font-weight: 700; color: var(--muted); background: var(--surface-sunken);
   padding: 0 7px; border-radius: 999px; flex-shrink: 0;
 }
-.shell-group__pct { font-size: 11px; color: var(--green); font-weight: 600; flex-shrink: 0; min-width: 30px; text-align: right; }
+.shell-group__pct { font-size: var(--fs-xs); color: var(--green); font-weight: 600; flex-shrink: 0; min-width: 30px; text-align: right; }
 .shell-group__body { padding: 2px 6px 6px; }
 
 .shell-team {
-  padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+  padding: 8px 10px; border-radius: var(--radius-lg); cursor: pointer; margin-bottom: 2px;
   border: 1px solid transparent; transition: background .14s, border-color .14s;
 }
 .shell-team:hover { background: var(--card-hover); }
 .shell-team--active { background: var(--brand-bg); border-color: var(--brand); }
 .shell-team__name {
-  font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
+  font-size: var(--fs-md); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
 }
 .shell-team--active .shell-team__name { color: var(--brand-light); font-weight: 600; }
 .shell-team__meta { display: flex; align-items: center; gap: 8px; }
@@ -240,5 +240,5 @@
 .shell-team__bar-fill { height: 100%; background: var(--brand); border-radius: 2px; transition: width .3s; }
 .shell-team__bar-fill--done { background: var(--green); }
 .shell-team__bar-fill--warn { background: var(--orange); }
-.shell-team__nums { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.shell-team__nums { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
 .shell-team__blocked { color: var(--red-light); font-weight: 600; }

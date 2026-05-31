@@ -8,30 +8,33 @@
 .bill-kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .bill-kpi {
   position: relative;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 18px 20px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .bill-kpi:hover {
   border-color: var(--line-light);
   background: var(--card-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .bill-kpi__label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
@@ -39,7 +42,7 @@
   line-height: 1.2;
 }
 .bill-kpi__value {
-  font-size: 28px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--text);
   line-height: 1.15;
@@ -49,7 +52,7 @@
   text-overflow: ellipsis;
 }
 .bill-kpi__sub {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--text-secondary);
   line-height: 1.3;
 }
@@ -71,8 +74,8 @@
 .bill-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .bill-chart-panel {
@@ -102,7 +105,7 @@
 .bill-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: var(--space-2) 16px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -111,14 +114,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
   white-space: nowrap;
 }
 .bill-legend__dot {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   background: var(--chart-gray);
 }
@@ -127,7 +130,7 @@
 .bill-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fs-md);
 }
 .bill-table th,
 .bill-table td {
@@ -141,7 +144,7 @@
   z-index: 1;
   background: var(--panel);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -168,7 +171,7 @@
   gap: 5px;
   padding: 2px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -184,7 +187,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
   white-space: nowrap;
 }
@@ -203,16 +206,18 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .bill-toolbar__spacer { flex: 1 1 auto; }
 .bill-toolbar select,
 .bill-toolbar input {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
   color: var(--text);
-  font-size: 13px;
+  font-size: var(--fs-md);
   padding: 6px 10px;
   transition: border-color 0.16s ease;
 }
@@ -228,18 +233,18 @@
   padding: 3px;
   gap: 2px;
   background: var(--bg-elevated);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
 }
 .bill-seg__btn {
   appearance: none;
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   padding: 6px 14px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.16s ease, color 0.16s ease;
@@ -255,14 +260,16 @@
 .usage-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .usage-token-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 18px 20px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -270,24 +277,25 @@
 }
 .usage-token-card:hover {
   border-color: var(--line-light);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 .usage-token-card__label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
 }
 .usage-token-card__value {
-  font-size: 24px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
 .usage-token-card__sub {
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--text-secondary);
 }
 
@@ -295,8 +303,8 @@
 @media (max-width: 900px) {
   .bill-grid { grid-template-columns: 1fr; }
   .bill-kpi-row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-  .bill-kpi__value { font-size: 24px; }
-  .bill-toolbar { gap: 8px; }
+  .bill-kpi__value { font-size: var(--fs-2xl); }
+  .bill-toolbar { gap: var(--space-2); }
   .bill-toolbar__spacer { flex-basis: 100%; }
 }
 @media (max-width: 560px) {
@@ -310,19 +318,19 @@
 .bill-hero {
   background: linear-gradient(135deg, rgba(27,150,255,0.10), rgba(139,92,246,0.06));
   border: 1px solid var(--line-light);
-  border-radius: 16px;
-  padding: 20px 22px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 .bill-hero__head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .bill-hero__badge {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.3px;
   color: var(--brand-light);
@@ -331,25 +339,27 @@
   padding: 4px 12px;
   border-radius: 999px;
 }
-.bill-hero__assume { font-size: 12.5px; color: var(--text-secondary); }
+.bill-hero__assume { font-size: var(--fs-sm); color: var(--text-secondary); }
 .bill-hero__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
 }
 .bill-hero__card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px 18px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
 }
 .bill-hero__card--accent { border-left: 3px solid var(--brand); }
 .bill-hero__card--success { border-left: 3px solid var(--green); }
-.bill-hero__card-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.bill-hero__card-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.bill-hero__card-label { font-size: var(--fs-sm); color: var(--muted); margin-bottom: 6px; }
+.bill-hero__card-value { font-size: var(--fs-2xl); font-weight: 800; color: var(--text); line-height: 1.1; }
 .bill-hero__card--accent .bill-hero__card-value { color: var(--brand-light); }
 .bill-hero__card--success .bill-hero__card-value { color: var(--green); }
-.bill-hero__card-sub { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.bill-hero__card-sub { font-size: var(--fs-sm); color: var(--text-secondary); margin-top: 6px; }
 .bill-hero__foot {
   display: flex;
   flex-wrap: wrap;
@@ -358,11 +368,11 @@
   padding-top: 14px;
   border-top: 1px solid var(--line);
 }
-.bill-hero__tok { font-size: 13px; color: var(--text-secondary); }
-.bill-hero__tok b { color: var(--text); font-size: 15px; }
+.bill-hero__tok { font-size: var(--fs-md); color: var(--text-secondary); }
+.bill-hero__tok b { color: var(--text); font-size: var(--fs-lg); }
 .bill-hero__tok-label { color: var(--muted); margin-right: 6px; }
-.bill-hero__tok-sub { color: var(--muted); font-size: 11px; }
-.bill-hero__note { font-size: 11.5px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+.bill-hero__tok-sub { color: var(--muted); font-size: var(--fs-xs); }
+.bill-hero__note { font-size: var(--fs-xs); color: var(--muted); margin-top: 12px; line-height: 1.5; }
 @media (max-width: 900px) {
   .bill-hero__grid { grid-template-columns: 1fr 1fr; }
 }
@@ -372,9 +382,9 @@
 
 /* ── 계정별 토큰 추이 (가로 스크롤 멀티라인) ─────────────── */
 .bill-acct-meta {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
   line-height: 1.5;
 }
 .bill-scroll {
@@ -386,7 +396,7 @@
   padding-bottom: 6px;
 }
 .bill-scroll::-webkit-scrollbar { height: 8px; }
-.bill-scroll::-webkit-scrollbar-track { background: var(--surface-sunken); border-radius: 4px; }
-.bill-scroll::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 4px; }
+.bill-scroll::-webkit-scrollbar-track { background: var(--surface-sunken); border-radius: var(--radius-sm); }
+.bill-scroll::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: var(--radius-sm); }
 .bill-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .bill-scroll .bill-chart-wrap { min-width: min-content; }
