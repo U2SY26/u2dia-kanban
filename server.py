@@ -59,6 +59,39 @@ _metrics_cache_time = 0.0
 _connected_clients = {}
 _clients_lock = threading.Lock()
 
+# ── nvidia-smi TTL 캐시 (GPU 행 걸려도 서버 전체가 멈추지 않도록) ──
+# 요청마다 nvidia-smi 직접 호출 → GPU 점유/드라이버 지연 시 호출이 쌓여 스레드 폭증·교착.
+# TTL 캐시 + 논블로킹 락: 4초에 1회만 실제 호출, 동시 호출은 즉시 (오래된) 캐시 반환.
+_nvsmi_cache = {}            # query(str) -> (timestamp, output(str))
+_nvsmi_lock = threading.Lock()
+_NVSMI_TTL = 4.0
+_NVSMI_TIMEOUT = 2.0
+
+def nvidia_smi_cached(query):
+    now = time.time()
+    ent = _nvsmi_cache.get(query)
+    if ent and (now - ent[0]) < _NVSMI_TTL:
+        return ent[1]
+    # 다른 스레드가 이미 갱신 중이면 큐잉하지 말고 즉시 캐시(없으면 빈문자열) 반환
+    if not _nvsmi_lock.acquire(blocking=False):
+        return ent[1] if ent else ""
+    try:
+        ent = _nvsmi_cache.get(query)            # 락 대기 사이 갱신됐는지 재확인
+        now = time.time()
+        if ent and (now - ent[0]) < _NVSMI_TTL:
+            return ent[1]
+        try:
+            out = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=" + query, "--format=csv,noheader,nounits"],
+                timeout=_NVSMI_TIMEOUT, stderr=subprocess.DEVNULL
+            ).decode().strip()
+        except Exception:
+            out = ""
+        _nvsmi_cache[query] = (time.time(), out)
+        return out
+    finally:
+        _nvsmi_lock.release()
+
 
 # ── SQLite ──
 
@@ -8491,14 +8524,9 @@ def api_system_gpu():
         "disk": {"total_gb": 0, "used_gb": 0, "percent": 0},
     }
 
-    # GPU (nvidia-smi)
+    # GPU (nvidia-smi) — TTL 캐시 경유 (행 방지)
     try:
-        out = subprocess.check_output(
-            ["nvidia-smi",
-             "--query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw",
-             "--format=csv,noheader,nounits"],
-            timeout=3, stderr=subprocess.DEVNULL
-        ).decode().strip()
+        out = nvidia_smi_cached("name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw")
         if out:
             for line in out.split("\n"):
                 parts = [p.strip() for p in line.split(",")]
@@ -8719,12 +8747,8 @@ def _get_system_metrics():
     metrics["gpu_power_max_w"] = 0
     metrics["gpu_fan_percent"] = 0
     try:
-        out = subprocess.check_output(
-            ["nvidia-smi", "--query-gpu=name,utilization.gpu,temperature.gpu,"
-             "memory.used,memory.total,power.draw,power.limit,fan.speed",
-             "--format=csv,noheader,nounits"],
-            timeout=5, stderr=subprocess.DEVNULL
-        ).decode().strip()
+        out = nvidia_smi_cached("name,utilization.gpu,temperature.gpu,"
+                                "memory.used,memory.total,power.draw,power.limit,fan.speed")
         if out:
             parts = [p.strip() for p in out.split(",")]
             metrics["gpu_name"] = parts[0] if len(parts) > 0 else ""
@@ -19689,14 +19713,11 @@ def r_agent_health(params, body, url_params, query):
     except Exception:
         out["ollama"] = {"models": [], "total_vram_gb": 0, "model_count": 0}
     try:
-        r = _sp.run(
-            ["nvidia-smi", "--query-gpu=memory.used,memory.total,utilization.gpu",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=2)
-        if r.returncode == 0:
-            parts = [x.strip() for x in r.stdout.strip().split("\n")[0].split(",")]
+        smi = nvidia_smi_cached("memory.used,memory.total,utilization.gpu")
+        if smi:
+            parts = [x.strip() for x in smi.split("\n")[0].split(",")]
             if len(parts) >= 3:
-                used = int(parts[0]); total = int(parts[1]); util = int(parts[2])
+                used = int(float(parts[0])); total = int(float(parts[1])); util = int(float(parts[2]))
                 out["gpu"] = {
                     "vram_used_mb": used, "vram_total_mb": total,
                     "vram_pct": round(used / total * 100, 1) if total else 0,
