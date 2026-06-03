@@ -420,7 +420,7 @@ const SettingsView = {
   async _renderMetrics(el) {
     el.innerHTML = this._pageShell(
       '시스템 메트릭',
-      '서버 호스트의 실시간 리소스 · GPU · 온도 vital 입니다. 3초마다 갱신됩니다.',
+      '서버 호스트의 실시간 리소스 · GPU · 온도 vital 입니다. 10초마다 갱신됩니다.',
       '<span class="u-badge u-badge--info" id="metRefresh" style="font-variant-numeric:tabular-nums">live · -- s</span>',
       this._section('Vital', '호스트 OS · GPU · 온도 센서 · 노드 현황.', 'activity',
         '<div id="metBody" style="padding:var(--space-4) var(--section-card-pad-x)"><div class="u-skeleton u-skeleton--block"></div></div>'
@@ -513,12 +513,12 @@ const SettingsView = {
     };
 
     await tick();
-    let n = 3;
+    let n = 10;
     this._metricsTimer = setInterval(() => {
       n -= 1;
       const b = document.getElementById('metRefresh');
       if (b) b.textContent = 'live · ' + n + ' s';
-      if (n <= 0) { n = 3; tick(); }
+      if (n <= 0) { n = 10; tick(); }
     }, 1000);
   },
 

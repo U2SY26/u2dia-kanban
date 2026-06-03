@@ -301,13 +301,13 @@ const HomeView = {
       '</div>';
   },
 
-  // 5\ucd08 \uac04\uaca9 GPU\u00b7\ub9ac\uc18c\uc2a4 \ud3f4\ub9c1 (render \uc2dc\uc791/\ubdf0 \uc774\ud0c8 \uc2dc \uc815\ub9ac)
+  // 10\ucd08 \uac04\uaca9 GPU\u00b7\ub9ac\uc18c\uc2a4 \ud3f4\ub9c1 (\uc11c\ubc84 nvidia-smi \uce90\uc2dc 4\ucd08\ubcf4\ub2e4 \uae38\uac8c \u2014 GPU \ubd80\ud558 \uc808\uac10)
   _startMetricsPoll() {
     this._stopMetricsPoll();
     this._metricsTimer = setInterval(() => {
       if (!document.getElementById('homeYudiMetricsCard')) { this._stopMetricsPoll(); return; }
       this._renderYudiMetrics();
-    }, 5000);
+    }, 10000);
   },
   _stopMetricsPoll() {
     if (this._metricsTimer) { clearInterval(this._metricsTimer); this._metricsTimer = null; }
