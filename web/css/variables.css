@@ -87,11 +87,12 @@
   --fs-xs: 11px;
   --fs-sm: 12px;
   --fs-md: 13px;
-  --fs-lg: 15px;
-  --fs-xl: 18px;
-  --fs-2xl: 24px;
-  --fs-3xl: 32px;
-  --fs-4xl: 40px;
+  /* 큰 단계는 유동(clamp) — 모바일에서 자동 축소, 데스크탑(넓은 폭)은 기존 px 유지 */
+  --fs-lg: clamp(14px, 0.6vw + 12px, 15px);
+  --fs-xl: clamp(15px, 1.2vw + 11px, 18px);
+  --fs-2xl: clamp(18px, 2vw + 13px, 24px);
+  --fs-3xl: clamp(20px, 3vw + 14px, 32px);
+  --fs-4xl: clamp(24px, 4vw + 15px, 40px);
   --lh-tight: 1.2;
   --lh-normal: 1.5;
 

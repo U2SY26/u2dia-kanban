@@ -23,6 +23,13 @@ const Sidebar = {
     this._restoreLayout();
     this._installResizer();
     this._renderRail();
+    // 모바일: 팀/항목(leaf) 선택 시 좌측 목록 자동 닫기 (그룹 헤더 토글은 제외)
+    document.addEventListener('click', (e) => {
+      if (!this._isMobile()) return;
+      if (e.target.closest('.shell-team, .shell-list .u-list-item')) {
+        setTimeout(() => Sidebar.closeMobileList(), 60);
+      }
+    });
   },
 
   _railPx() {
@@ -174,6 +181,36 @@ const Sidebar = {
     const item = this.RAIL_ITEMS.find(x => x.key === key);
     if (!item || !item.route) return;
     Router.navigate(item.route);
+    // 모바일: 목록 있는 섹션이면 좌측 리스트(팀 메뉴 등)를 자동으로 슬라이드 인
+    if (this._isMobile()) {
+      if (this.NO_LIST.indexOf(key) === -1) this.openMobileList();
+      else this.closeMobileList();
+    }
+  },
+
+  _isMobile() { return window.innerWidth <= 900; },
+
+  openMobileList() {
+    const shell = document.getElementById('shell');
+    if (!shell) return;
+    shell.classList.add('shell--list-open');
+    this._ensureBackdrop();
+  },
+
+  closeMobileList() {
+    const shell = document.getElementById('shell');
+    if (shell) shell.classList.remove('shell--list-open');
+  },
+
+  _ensureBackdrop() {
+    if (document.getElementById('shellListBackdrop')) return;
+    const shell = document.getElementById('shell');
+    if (!shell) return;
+    const bd = document.createElement('div');
+    bd.id = 'shellListBackdrop';
+    bd.className = 'shell-list__backdrop';
+    bd.addEventListener('click', () => Sidebar.closeMobileList());
+    shell.appendChild(bd);
   },
 
   async _renderList() {

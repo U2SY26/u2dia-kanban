@@ -329,6 +329,20 @@
   .shell-header__breadcrumb { font-size: var(--text-xs); }
 }
 
+/* 모바일 좌측 목록(팀 메뉴) 오버레이 백드롭 — 탭하면 닫힘 */
+.shell-list__backdrop { display: none; }
+@media (max-width: 900px) {
+  #shell.shell--list-open .shell-list__backdrop {
+    display: block;
+    position: fixed;
+    inset: var(--shell-header-h) 0 0 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 49;
+    animation: shellBackdropIn 0.16s ease;
+  }
+}
+@keyframes shellBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+
 /* ══════════════════════════════════════════════════
    Home 뷰 헬퍼 (ship OS급, 고밀도 레이아웃)
    ══════════════════════════════════════════════════ */
@@ -336,7 +350,7 @@
 
 .home-welcome { display: flex; align-items: baseline; gap: var(--space-3); padding: 6px 0 14px; border-bottom: 1px solid var(--divider); margin-bottom: var(--space-2); }
 .home-welcome h1 {
-  font-size: 28px;
+  font-size: clamp(20px, 3.4vw + 12px, 28px);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.03em;
