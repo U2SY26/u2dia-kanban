@@ -57,3 +57,9 @@ flutter_app/android/fastlane/
 # Claude Code 로컬/임시 파일
 .claude/settings.local.json
 .claude/.active_ticket
+
+# Play Store 서비스계정 키 — 절대 커밋 금지
+**/service-account.json
+**/play-store/
+*.keystore
+flutter_app/android/key.properties

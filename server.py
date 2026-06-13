@@ -10950,6 +10950,72 @@ def r_usage_global(params, body, url_params, query):
     }
 
 
+@route("GET", "/api/usage/actual")
+def r_usage_actual(params, body, url_params, query):
+    """실측 토큰 사용량 — Claude Code 세션 트랜스크립트 ingest(claude_usage_daily) 기반.
+    결제 역산 추정값이 아닌 '실제 처리 토큰'. scripts/ingest_claude_usage.py 가 적재.
+    유효(effective) = input+output+cache_creation, 총처리(total) = +cache_read."""
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT day, model, project, input_tokens, output_tokens, "
+            "cache_creation_tokens, cache_read_tokens, message_count FROM claude_usage_daily"
+        ).fetchall()
+        updated = conn.execute("SELECT MAX(updated_at) FROM claude_usage_daily").fetchone()
+    except Exception:
+        conn.close()
+        return {"ok": True, "available": False, "reason": "not_ingested",
+                "totals": {}, "by_model": [], "by_day": [], "by_project": []}
+    conn.close()
+
+    def eff(r): return (r["input_tokens"] or 0) + (r["output_tokens"] or 0) + (r["cache_creation_tokens"] or 0)
+    def tot(r): return eff(r) + (r["cache_read_tokens"] or 0)
+
+    ti = sum(r["input_tokens"] or 0 for r in rows)
+    to = sum(r["output_tokens"] or 0 for r in rows)
+    tcc = sum(r["cache_creation_tokens"] or 0 for r in rows)
+    tcr = sum(r["cache_read_tokens"] or 0 for r in rows)
+    msgs = sum(r["message_count"] or 0 for r in rows)
+    days = sorted({r["day"] for r in rows})
+
+    from collections import defaultdict
+    bm = defaultdict(lambda: [0, 0, 0])  # model -> [eff, total, msgs]
+    bd = defaultdict(lambda: [0, 0])     # day -> [eff, total]
+    bp = defaultdict(lambda: [0, 0])     # project -> [eff, total]
+    for r in rows:
+        e, t = eff(r), tot(r)
+        bm[r["model"]][0] += e; bm[r["model"]][1] += t; bm[r["model"]][2] += (r["message_count"] or 0)
+        bd[r["day"]][0] += e; bd[r["day"]][1] += t
+        bp[r["project"]][0] += e; bp[r["project"]][1] += t
+
+    by_model = sorted(
+        [{"model": m, "effective": v[0], "total": v[1], "messages": v[2]} for m, v in bm.items()],
+        key=lambda x: -x["effective"])
+    by_day = [{"day": d, "effective": bd[d][0], "total": bd[d][1]} for d in days]
+    by_project = sorted(
+        [{"project": p, "effective": v[0], "total": v[1]} for p, v in bp.items()],
+        key=lambda x: -x["effective"])
+
+    return {
+        "ok": True,
+        "available": len(rows) > 0,
+        "updated_at": updated[0] if updated else None,
+        "day_count": len(days),
+        "first_day": days[0] if days else None,
+        "last_day": days[-1] if days else None,
+        "message_count": msgs,
+        "totals": {
+            "input_tokens": ti, "output_tokens": to,
+            "cache_creation_tokens": tcc, "cache_read_tokens": tcr,
+            "effective_tokens": ti + to + tcc,
+            "total_tokens": ti + to + tcc + tcr,
+        },
+        "by_model": by_model,
+        "by_day": by_day,
+        "by_project": by_project[:12],
+    }
+
+
 # ── 일일 보고서 / KPI API ──
 
 @route("GET", "/api/reports/daily")

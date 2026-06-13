@@ -1,7 +1,7 @@
 name: u2dia_kanban
 description: U2DIA AI 칸반보드 모바일 앱
 publish_to: 'none'
-version: 5.23.0+161
+version: 5.24.1+174
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

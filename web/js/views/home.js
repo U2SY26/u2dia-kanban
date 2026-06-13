@@ -147,7 +147,7 @@ const HomeView = {
   async _renderYudi() {
     const el = document.getElementById('homeYudiCard');
     if (!el) return;
-    let billLife = {}, months = [], tok = {}, rate = 1507;
+    let billLife = {}, months = [], tok = {}, rate = 1507, actual = null;
     try {
       const rb = await API.billingLifetime();
       if (rb && rb.ok) { billLife = rb.lifetime || {}; rate = rb.krw_rate || rate; }
@@ -159,6 +159,10 @@ const HomeView = {
     try {
       const rt = await API.billingTokens('sonnet');
       if (rt && rt.ok) tok = rt;
+    } catch(e) {}
+    try {
+      const ra = await API.usageActual();
+      if (ra && ra.ok && ra.available) actual = ra;
     } catch(e) {}
 
     const billMonth = months.length ? months[months.length-1] : null;
@@ -173,6 +177,10 @@ const HomeView = {
     const life = Number(billLife.lifetime_paid_usd||0);
     const lifeKrw = billLife.lifetime_paid_krw != null ? billLife.lifetime_paid_krw : life*rate;
     const estTok = Number(tok.lifetime_est_tokens||0);
+    // 실측 토큰 (Claude Code 세션 트랜스크립트 ingest) — 있으면 추정 대신 표시
+    const realTotal = actual ? Number((actual.totals||{}).total_tokens||0) : 0;
+    const realEff = actual ? Number((actual.totals||{}).effective_tokens||0) : 0;
+    const realDays = actual ? Number(actual.day_count||0) : 0;
     const addonUsd = Number(billLife.lifetime_addon_usd||0);
     const subUsd = Number(billLife.lifetime_subscription_usd||0);
     const refundUsd = Number(billLife.lifetime_refunded_usd||0);
@@ -222,7 +230,9 @@ const HomeView = {
       '    <div class="home-cost-kpis">' +
             kpi('\uc774\ubc88\ub2ec \ube44\uc6a9', wonShort(mtdKrw), usd(mtd) + delta) +
             kpi('\ub204\uc801 \uacb0\uc81c', wonShort(lifeKrw), usd(life) + ' \u00b7 ' + (billLife.active_months||0) + '\uac1c\uc6d4') +
-            kpi('\ucd94\uc815 \ud1a0\ud070', tk(estTok), '\uc560\ub4dc\uc628 ' + usd(addonUsd) + ' \uae30\uc900', true) +
+            (actual
+              ? kpi('\uc2e4\uc0ac\uc6a9 \ud1a0\ud070', tk(realTotal), '\uc2e4\uce21 ' + realDays + '\uc77c \u00b7 \uc720\ud6a8 ' + tk(realEff), true)
+              : kpi('\ucd94\uc815 \ud1a0\ud070', tk(estTok), '\uc560\ub4dc\uc628 ' + usd(addonUsd) + ' \uae30\uc900', true)) +
             kpi('\uc560\ub4dc\uc628 \ud06c\ub808\ub527', wonShort(addonUsd*rate), usd(addonUsd) + ' \ub204\uc801') +
       '    </div>' +
       '    <div class="home-cost-chart">' +

@@ -84,6 +84,7 @@ const API = {
 
   // ── 글로벌 사용량 ──
   usageGlobal() { return this.get('/api/usage/global'); },
+  usageActual() { return this.get('/api/usage/actual'); },
 
   // ── 청구/사용량 (Billing) ──
   billingLifetime()   { return this.get('/api/billing/lifetime'); },
