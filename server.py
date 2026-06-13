@@ -9949,6 +9949,41 @@ def r_system_clients(params, body, url_params, query):
 def r_competitions(params, body, url_params, query):
     return api_competitions()
 
+@route("GET", "/api/competitions/training")
+def r_competitions_training(params, body, url_params, query):
+    """NVIDIA Brev 학습 기록 — 설정 brev_history_db(nemotron-loop history.db)를 read-only 로
+    읽어 training_runs / submissions 요약 반환. 경로 미설정/부재 시 available=False."""
+    conn = get_db()
+    row = conn.execute("SELECT value FROM server_settings WHERE key='brev_history_db'").fetchone()
+    conn.close()
+    path = row["value"] if row else None
+    if not path or not os.path.exists(path):
+        return {"ok": True, "available": False, "reason": "no_history_db"}
+    try:
+        h = sqlite3.connect("file:%s?mode=ro" % path, uri=True)
+        h.row_factory = sqlite3.Row
+        runs = h.execute("SELECT COUNT(*) n, MIN(start_at) f, MAX(COALESCE(end_at,start_at)) l FROM training_runs").fetchone()
+        recent_runs = [dict(r) for r in h.execute(
+            "SELECT version,gpu_id,recipe,start_at,end_at FROM training_runs ORDER BY id DESC LIMIT 5")]
+        subs = h.execute("SELECT COUNT(*) n, MAX(public_score) bp, MAX(private_score) bv FROM submissions").fetchone()
+        recent_subs = [dict(r) for r in h.execute(
+            "SELECT version,public_score,private_score,submitted_at FROM submissions ORDER BY id DESC LIMIT 5")]
+        try: steps = h.execute("SELECT COUNT(*) FROM training_steps").fetchone()[0]
+        except Exception: steps = 0
+        try: events = h.execute("SELECT COUNT(*) FROM training_events").fetchone()[0]
+        except Exception: events = 0
+        h.close()
+    except Exception as e:
+        return {"ok": True, "available": False, "error": str(e)}
+    return {
+        "ok": True, "available": True, "competition": "nemotron-reasoning-challenge",
+        "training_runs": runs["n"], "runs_first": runs["f"], "runs_last": runs["l"],
+        "recent_runs": recent_runs,
+        "submissions": subs["n"], "best_public": subs["bp"], "best_private": subs["bv"],
+        "recent_submissions": recent_subs,
+        "training_steps": steps, "training_events": events,
+    }
+
 @route("GET", "/api/competitions/dirs")
 def r_competition_dirs_get(params, body, url_params, query):
     """등록된 대회 디렉토리 목록."""

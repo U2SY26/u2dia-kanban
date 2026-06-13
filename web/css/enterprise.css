@@ -816,6 +816,19 @@ body {
 .comp-tag { font-size: var(--fs-xs); color: var(--text-secondary); background: var(--surface-sunken); padding: 3px 10px; border-radius: 6px; }
 @media (max-width: 900px) { .comp-grid { grid-template-columns: 1fr; } }
 
+/* 대회 카드 내 NVIDIA Brev 학습 기록 패널 */
+.comp-brev {
+  margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-lg);
+  border: 1px solid rgba(118,185,0,0.28);
+  background: linear-gradient(180deg, rgba(118,185,0,0.10), rgba(118,185,0,0) 70%), var(--surface-sunken);
+}
+.comp-brev__head { font-size: var(--fs-xs); font-weight: 700; color: #76B900; letter-spacing: .02em; margin-bottom: 10px; }
+.comp-brev__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.comp-brev__stat { text-align: center; }
+.comp-brev__v { font-size: var(--fs-lg); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.comp-brev__k { font-size: var(--fs-2xs); color: var(--muted); margin-top: 2px; }
+.comp-brev__recent { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: var(--fs-2xs); color: var(--text-secondary); }
+
 /* ════════════════════════════════════════════════════════════
    입체 고급 카드 — glass(blur) 대신 상단 하이라이트 + 그라데이션.
    단색 다크 배경에서 카드가 명확히 떠 보이게 (Linear/OpenClaw 스타일).
