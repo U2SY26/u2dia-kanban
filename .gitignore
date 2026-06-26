@@ -63,3 +63,6 @@ flutter_app/android/fastlane/
 **/play-store/
 *.keystore
 flutter_app/android/key.properties
+
+# 로컬 DB 백업 (tar로 이동 — git 커밋 제외)
+local_backup/
